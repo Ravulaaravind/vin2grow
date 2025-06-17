@@ -3,7 +3,7 @@ import { toast } from 'react-toastify';
 import { Link, useLocation } from 'react-router-dom';
 import { BACKEND_URL } from '../config';
 import { motion } from 'framer-motion';
-import { FaCopy } from 'react-icons/fa';
+import { FaCopy, FaTimes } from 'react-icons/fa';
 import { useAuth } from '../context/AuthContext';
 import { orders as ordersApi } from '../services/api';
 
@@ -19,6 +19,11 @@ const statusStyles = {
   cancelled: 'bg-red-900 text-red-100',
 };
 
+const getImageUrl = (img) => {
+  if (!img) return '/placeholder.svg';
+  return img.startsWith('http') ? img : BACKEND_URL + img.replace(/^\/+/, '');
+};
+
 const Orders = () => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -29,6 +34,8 @@ const Orders = () => {
   const [isTrackingModalOpen, setIsTrackingModalOpen] = useState(false);
   const [trackingLoading, setTrackingLoading] = useState(false);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [isProductModalOpen, setIsProductModalOpen] = useState(false);
   const { user } = useAuth();
   const location = useLocation();
 
@@ -139,16 +146,18 @@ const Orders = () => {
   };
 
   const handleTrackOrder = async (order) => {
-    try {
-      setTrackingLoading(true);
-      const response = await ordersApi.getTracking(order._id);
-      setSelectedOrder({ ...order, trackingDetails: response.data.trackingDetails });
-      setIsTrackingModalOpen(true);
-    } catch (err) {
-      toast.error('Failed to fetch tracking details');
-    } finally {
-      setTrackingLoading(false);
-    }
+    setSelectedOrder(order);
+    setIsTrackingModalOpen(true);
+  };
+
+  const handleProductClick = (product) => {
+    setSelectedProduct(product);
+    setIsProductModalOpen(true);
+  };
+
+  const closeProductModal = () => {
+    setSelectedProduct(null);
+    setIsProductModalOpen(false);
   };
 
   const filteredOrders = orders
@@ -321,47 +330,74 @@ const Orders = () => {
                 transition={{ delay: index * 0.05 }}
                 className="bg-gray-800 rounded-lg shadow overflow-hidden border border-green-700"
               >
-                <div className="p-6">
-                  <div className="flex justify-between items-start mb-4">
+                <div className="p-6 md:p-8 lg:p-10">
+                  <div className="flex justify-between items-start mb-4 md:mb-6">
                     <div>
-                      <h2 className="text-lg font-semibold text-green-400">
+                      <h2 className="text-lg md:text-xl lg:text-2xl font-semibold text-green-400">
                         Order #{order._id.slice(-6)}
                       </h2>
-                      <p className="text-sm text-gray-400">
+                      <p className="text-sm md:text-base text-gray-400">
                         Placed on {new Date(order.createdAt).toLocaleDateString()}
                       </p>
                     </div>
-                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(order.status)}`}>
+                    <span className={`px-3 py-1 md:px-4 md:py-2 rounded-full text-sm md:text-base font-medium ${getStatusColor(order.status)}`}>
                       {order.status.replace(/_/g, ' ').toUpperCase()}
                     </span>
                   </div>
 
                   <div className="border-t border-green-700 pt-4">
-                    <h3 className="text-sm font-medium text-green-400 mb-2">Items</h3>
-                    <div className="space-y-2">
+                    <h3 className="text-sm font-medium text-green-400 mb-3">Items</h3>
+                    <div className="space-y-4">
                       {order.items.map((item) => (
-                        <div key={item._id} className="flex justify-between text-sm">
-                          <span className="text-gray-300">{item.product?.name} x {item.quantity}</span>
-                          <span className="text-green-400 font-medium">₹{item.price * item.quantity}</span>
+                        <div 
+                          key={item._id} 
+                          className="flex items-center gap-4 md:gap-6 lg:gap-8 cursor-pointer hover:bg-gray-700/50 rounded-lg p-2 transition-colors"
+                          onClick={() => handleProductClick(item.product)}
+                        >
+                          <div className="flex-shrink-0 w-16 h-16 md:w-20 md:h-20 lg:w-24 lg:h-24 rounded-lg overflow-hidden bg-gray-700 border border-green-700">
+                            <img
+                              src={getImageUrl(item.product?.images?.[0])}
+                              alt={item.product?.name}
+                              className="w-full h-full object-contain"
+                            />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between gap-4">
+                              <h4 className="text-sm md:text-base lg:text-lg font-medium text-gray-200 truncate flex-1">
+                                {item.product?.name}
+                              </h4>
+                              <span className="text-sm md:text-base lg:text-lg text-green-400 font-medium">
+                                ₹{item.price * item.quantity}
+                              </span>
+                            </div>
+                            <p className="mt-1 text-xs md:text-sm lg:text-base text-gray-400">
+                              Quantity: {item.quantity} × ₹{item.price}
+                            </p>
+                            {item.product?.length && item.product?.width && item.product?.height && (
+                              <p className="mt-1 text-xs md:text-sm text-gray-500">
+                                Size: {item.product.length} × {item.product.width} × {item.product.height} cm
+                              </p>
+                            )}
+                          </div>
                         </div>
                       ))}
                     </div>
                   </div>
 
-                  <div className="border-t border-green-700 pt-4 mt-4">
+                  <div className="border-t border-green-700 pt-4 md:pt-6">
                     <div className="flex justify-between items-center">
-                      <span className="text-sm font-medium text-green-400">Total Amount</span>
-                      <span className="text-lg font-semibold text-green-400">₹{order.totalAmount}</span>
+                      <span className="text-sm md:text-base font-medium text-green-400">Total Amount</span>
+                      <span className="text-lg md:text-xl lg:text-2xl font-semibold text-green-400">₹{order.totalAmount}</span>
                     </div>
                   </div>
 
-                  <div className="border-t border-green-700 pt-4 mt-4">
-                    <h3 className="text-sm font-medium text-green-400 mb-2">Delivery Details</h3>
-                    <div className="text-sm text-gray-400">
+                  <div className="border-t border-green-700 pt-4 md:pt-6 mt-4 md:mt-6">
+                    <h3 className="text-sm md:text-base font-medium text-green-400 mb-2 md:mb-3">Delivery Details</h3>
+                    <div className="text-sm md:text-base text-gray-400">
                       <p>Date: {new Date(order.deliveryDate).toLocaleDateString()}</p>
                       <p>Time: {order.deliveryTime}</p>
                       {order.address && (
-                        <p className="mt-2">
+                        <p className="mt-2 md:mt-3">
                           {order.address.street}<br />
                           {order.address.city}, {order.address.state}<br />
                           Pincode: {order.address.pincode}
@@ -371,8 +407,8 @@ const Orders = () => {
                   </div>
 
                   {order.status === 'out_for_delivery' && order.otp && (
-                    <div className="border-t border-green-700 pt-4 mt-4">
-                      <p className="text-sm text-gray-400">
+                    <div className="border-t border-green-700 pt-4 md:pt-6 mt-4 md:mt-6">
+                      <p className="text-sm md:text-base text-gray-400">
                         Delivery OTP: <span className="font-semibold text-green-400">{order.otp}</span>
                         <button 
                           onClick={() => copyToClipboard(order.otp)}
@@ -384,12 +420,12 @@ const Orders = () => {
                     </div>
                   )}
 
-                  <div className="border-t border-green-700 pt-4 mt-4 flex flex-wrap justify-end gap-3">
+                  <div className="border-t border-green-700 pt-4 md:pt-6 mt-4 md:mt-6 flex flex-wrap justify-end gap-3">
                     {order.status !== 'cancelled' && order.status !== 'delivered' && order.status !== 'confirmed' && (
                       <button
                         onClick={() => handleCancelOrder(order._id)}
                         disabled={actionLoading.type === 'cancel' && actionLoading.orderId === order._id}
-                        className="px-4 py-2 text-red-400 hover:text-red-300 disabled:opacity-50 border border-red-700 rounded-md hover:bg-red-900 transition-colors"
+                        className="px-4 py-2 md:px-6 md:py-3 text-sm md:text-base text-red-400 hover:text-red-300 disabled:opacity-50 border border-red-700 rounded-md hover:bg-red-900 transition-colors"
                       >
                         {actionLoading.type === 'cancel' && actionLoading.orderId === order._id
                           ? 'Cancelling...'
@@ -403,6 +439,137 @@ const Orders = () => {
           </div>
         )}
       </div>
+
+      {/* Product Detail Modal */}
+      {isProductModalOpen && selectedProduct && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+          onClick={closeProductModal}
+        >
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            className="bg-gray-800 rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-green-700"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="p-6 md:p-8">
+              {/* Header */}
+              <div className="flex justify-between items-start mb-6">
+                <h2 className="text-xl md:text-2xl font-bold text-green-400">Product Details</h2>
+                <button
+                  onClick={closeProductModal}
+                  className="text-gray-400 hover:text-white transition-colors p-2"
+                >
+                  <FaTimes className="w-6 h-6" />
+                </button>
+              </div>
+
+              {/* Product Image */}
+              <div className="mb-6">
+                <div className="w-full h-64 md:h-80 rounded-lg overflow-hidden bg-gray-700 border border-green-700">
+                  <img
+                    src={getImageUrl(selectedProduct.images?.[0])}
+                    alt={selectedProduct.name}
+                    className="w-full h-full object-contain"
+                  />
+                </div>
+              </div>
+
+              {/* Product Information */}
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-lg md:text-xl font-semibold text-gray-200 mb-2">
+                    {selectedProduct.name}
+                  </h3>
+                  <p className="text-gray-400 text-sm md:text-base">
+                    {selectedProduct.description || 'No description available'}
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="bg-gray-700 p-4 rounded-lg">
+                    <h4 className="text-green-400 font-semibold mb-2">Price</h4>
+                    <p className="text-2xl font-bold text-green-400">₹{selectedProduct.price}</p>
+                    {selectedProduct.discount > 0 && (
+                      <p className="text-sm text-gray-400 line-through">
+                        Original: ₹{Math.round(selectedProduct.price * (1 + selectedProduct.discount / 100))}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="bg-gray-700 p-4 rounded-lg">
+                    <h4 className="text-green-400 font-semibold mb-2">Category</h4>
+                    <p className="text-gray-200 capitalize">{selectedProduct.category || 'General'}</p>
+                  </div>
+                </div>
+
+                {/* Dimensions */}
+                {(selectedProduct.length || selectedProduct.width || selectedProduct.height) && (
+                  <div className="bg-gray-700 p-4 rounded-lg">
+                    <h4 className="text-green-400 font-semibold mb-2">Dimensions</h4>
+                    <div className="grid grid-cols-3 gap-4 text-center">
+                      {selectedProduct.length && (
+                        <div>
+                          <p className="text-sm text-gray-400">Length</p>
+                          <p className="text-lg font-semibold text-gray-200">{selectedProduct.length} cm</p>
+                        </div>
+                      )}
+                      {selectedProduct.width && (
+                        <div>
+                          <p className="text-sm text-gray-400">Width</p>
+                          <p className="text-lg font-semibold text-gray-200">{selectedProduct.width} cm</p>
+                        </div>
+                      )}
+                      {selectedProduct.height && (
+                        <div>
+                          <p className="text-sm text-gray-400">Height</p>
+                          <p className="text-lg font-semibold text-gray-200">{selectedProduct.height} cm</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Additional Details */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="bg-gray-700 p-4 rounded-lg">
+                    <h4 className="text-green-400 font-semibold mb-2">Stock</h4>
+                    <p className="text-gray-200">{selectedProduct.stock || 0} units available</p>
+                  </div>
+
+                  <div className="bg-gray-700 p-4 rounded-lg">
+                    <h4 className="text-green-400 font-semibold mb-2">Order Limits</h4>
+                    <p className="text-gray-200">
+                      Min: {selectedProduct.minOrder || 1} | Max: {selectedProduct.maxOrder || 100}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Discount Information */}
+                {selectedProduct.discount > 0 && (
+                  <div className="bg-green-900/30 border border-green-600 p-4 rounded-lg">
+                    <h4 className="text-green-400 font-semibold mb-2">Special Offer</h4>
+                    <p className="text-green-300">
+                      {selectedProduct.discount}% discount available on this product!
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* Close Button */}
+              <div className="mt-8 flex justify-end">
+                <button
+                  onClick={closeProductModal}
+                  className="px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-colors"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 };
