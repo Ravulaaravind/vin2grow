@@ -5,7 +5,7 @@ import { useCart } from '../context/CartContext';
 import { toast } from 'react-hot-toast';
 import { products as productsApi } from '../services/api';
 
-const BACKEND_URL = 'https://vin2growbackend.onrender.com/';
+const BACKEND_URL = 'http://localhost:5000/';
 const getImageUrl = (img) => {
   if (!img) return '/placeholder.svg';
   if (img.startsWith('http')) return img;
@@ -151,7 +151,7 @@ const ProductDetail = () => {
                     <img
                       src={getImageUrl(image)}
                       alt={`${product.name} ${index + 1}`}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-contain"
                     />
                   </button>
                 ))}
@@ -168,7 +168,7 @@ const ProductDetail = () => {
                   <img
                     src={getImageUrl((product.images || [])[selectedImage])}
                     alt={product.name}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-contain"
                   />
                   {product.discount > 0 && (
                     <div className="absolute top-4 right-4 bg-red-500 text-white px-2 py-1 rounded-full text-xs font-medium shadow-lg">
@@ -192,7 +192,7 @@ const ProductDetail = () => {
                       <img
                         src={getImageUrl(image)}
                         alt={`${product.name} ${index + 1}`}
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-contain"
                       />
                     </button>
                   ))}
@@ -234,7 +234,7 @@ const ProductDetail = () => {
                     </span>
                     <span className="text-sm text-gray-500">
                       {product.length && product.width && product.height 
-                        ? <span>/ <span className="text-gray-900 font-semibold">Length:</span>{product.length} × <span className="text-gray-900 font-semibold">Width:</span>{product.width} × <span className="text-gray-900 font-semibold">Height:</span>{product.height} cm</span>
+                        ? <span>/ <span className="text-gray-900 font-semibold">Dimensions:</span> Length: {product.length} cm, Width: {product.width} cm, Height: {product.height} cm</span>
                         : ''
                       }
                     </span>
@@ -276,19 +276,10 @@ const ProductDetail = () => {
               {product.length && product.width && product.height && (
                 <div className="mt-4 p-3 bg-gray-50 rounded-lg">
                   <h3 className="text-sm font-medium text-gray-700 mb-2">Product Dimensions</h3>
-                  <div className="grid grid-cols-3 gap-3">
-                    <div className="text-center">
-                      <span className="block text-xs text-gray-900 font-semibold">Length</span>
-                      <span className="block text-sm font-semibold text-gray-900">{product.length} cm</span>
-                    </div>
-                    <div className="text-center">
-                      <span className="block text-xs text-gray-900 font-semibold">Width</span>
-                      <span className="block text-sm font-semibold text-gray-900">{product.width} cm</span>
-                    </div>
-                    <div className="text-center">
-                      <span className="block text-xs text-gray-900 font-semibold">Height</span>
-                      <span className="block text-sm font-semibold text-gray-900">{product.height} cm</span>
-                    </div>
+                  <div className="grid grid-cols-1 gap-1">
+                    <span className="block text-xs text-gray-900 font-semibold">Length: {product.length} cm</span>
+                    <span className="block text-xs text-gray-900 font-semibold">Width: {product.width} cm</span>
+                    <span className="block text-xs text-gray-900 font-semibold">Height: {product.height} cm</span>
                   </div>
                 </div>
               )}
