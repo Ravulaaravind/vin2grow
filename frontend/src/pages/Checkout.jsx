@@ -125,7 +125,7 @@ const Checkout = () => {
                   />
                 </div>
                 <div>
-                  <label htmlFor="deliveryTime" className="block text-sm font-medium text-gray-700 mb-1">
+                  <label htmlFor="deliveryTime" className="block text-base font-semibold text-gray-700 mb-2">
                     Delivery Time
                   </label>
                   <select
@@ -134,7 +134,7 @@ const Checkout = () => {
                     value={formData.deliveryTime}
                     onChange={handleChange}
                     required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500 text-base"
                   >
                     <option value="morning">Morning (6 AM - 9 AM)</option>
                     <option value="evening">Evening (5 PM - 8 PM)</option>
