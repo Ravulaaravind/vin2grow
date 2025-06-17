@@ -1,0 +1,243 @@
+{
+  "info": {
+    "name": "Product APIs Collection",
+    "description": "Complete collection for testing Product APIs",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5000/api",
+      "type": "string"
+    },
+    {
+      "key": "authToken",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Health Check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/health",
+          "host": ["{{baseUrl}}"],
+          "path": ["health"]
+        },
+        "description": "Test if the server is running"
+      }
+    },
+    {
+      "name": "2. Get All Products",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/products",
+          "host": ["{{baseUrl}}"],
+          "path": ["products"]
+        },
+        "description": "Get all products (public endpoint)"
+      }
+    },
+    {
+      "name": "3. Get Products by Category",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/products/category/Shop all",
+          "host": ["{{baseUrl}}"],
+          "path": ["products", "category", "Shop all"]
+        },
+        "description": "Get products by specific category"
+      }
+    },
+    {
+      "name": "4. Get Single Product",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/products/PRODUCT_ID_HERE",
+          "host": ["{{baseUrl}}"],
+          "path": ["products", "PRODUCT_ID_HERE"]
+        },
+        "description": "Get a single product by ID (replace PRODUCT_ID_HERE with actual ID)"
+      }
+    },
+    {
+      "name": "5. Create Product (Admin Only)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{authToken}}",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "name",
+              "value": "Test Product",
+              "type": "text"
+            },
+            {
+              "key": "description",
+              "value": "This is a test product description",
+              "type": "text"
+            },
+            {
+              "key": "price",
+              "value": "299.99",
+              "type": "text"
+            },
+            {
+              "key": "category",
+              "value": "Shop all",
+              "type": "text"
+            },
+            {
+              "key": "stock",
+              "value": "50",
+              "type": "text"
+            },
+            {
+              "key": "length",
+              "value": "10",
+              "type": "text"
+            },
+            {
+              "key": "width",
+              "value": "5",
+              "type": "text"
+            },
+            {
+              "key": "height",
+              "value": "3",
+              "type": "text"
+            },
+            {
+              "key": "discount",
+              "value": "10",
+              "type": "text"
+            },
+            {
+              "key": "isDiscountActive",
+              "value": "true",
+              "type": "text"
+            },
+            {
+              "key": "images",
+              "type": "file",
+              "src": []
+            }
+          ]
+        },
+        "url": {
+          "raw": "{{baseUrl}}/products",
+          "host": ["{{baseUrl}}"],
+          "path": ["products"]
+        },
+        "description": "Create a new product (requires admin authentication)"
+      }
+    },
+    {
+      "name": "6. Update Product (Admin Only)",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{authToken}}",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "name",
+              "value": "Updated Test Product",
+              "type": "text"
+            },
+            {
+              "key": "description",
+              "value": "This is an updated test product description",
+              "type": "text"
+            },
+            {
+              "key": "price",
+              "value": "399.99",
+              "type": "text"
+            },
+            {
+              "key": "stock",
+              "value": "75",
+              "type": "text"
+            },
+            {
+              "key": "images",
+              "type": "file",
+              "src": []
+            }
+          ]
+        },
+        "url": {
+          "raw": "{{baseUrl}}/products/PRODUCT_ID_HERE",
+          "host": ["{{baseUrl}}"],
+          "path": ["products", "PRODUCT_ID_HERE"]
+        },
+        "description": "Update an existing product (replace PRODUCT_ID_HERE with actual ID)"
+      }
+    },
+    {
+      "name": "7. Delete Product (Admin Only)",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{authToken}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/products/PRODUCT_ID_HERE",
+          "host": ["{{baseUrl}}"],
+          "path": ["products", "PRODUCT_ID_HERE"]
+        },
+        "description": "Delete a product (replace PRODUCT_ID_HERE with actual ID)"
+      }
+    },
+    {
+      "name": "8. Login (Get Auth Token)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"admin@example.com\",\n  \"password\": \"adminpassword\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/auth/login",
+          "host": ["{{baseUrl}}"],
+          "path": ["auth", "login"]
+        },
+        "description": "Login to get authentication token for admin operations"
+      }
+    }
+  ]
+} 
