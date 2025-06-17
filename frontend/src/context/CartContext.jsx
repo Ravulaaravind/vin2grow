@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from './AuthContext';
 import apiService from '../api/apiService';
 
@@ -7,6 +8,7 @@ const CartContext = createContext();
 
 export const CartProvider = ({ children }) => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [cart, setCart] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -71,6 +73,7 @@ export const CartProvider = ({ children }) => {
     try {
       if (!user) {
         toast.error('Please login to add items to cart');
+        navigate('/login');
         return;
       }
 
@@ -110,6 +113,7 @@ export const CartProvider = ({ children }) => {
       console.error('Error adding to cart:', error);
       if (error.response?.status === 403) {
         toast.error('Please login to add items to cart');
+        navigate('/login');
       } else {
         toast.error(error.response?.data?.error || 'Failed to add to cart');
       }
