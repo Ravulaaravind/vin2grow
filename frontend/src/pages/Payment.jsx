@@ -87,7 +87,7 @@ const Payment = () => {
           key: import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_test_LhDSZSAlf3hFaQ',
           amount: razorpayOrder.data.amount,
           currency: razorpayOrder.data.currency,
-          name: 'Ma Amma Ruchulu',
+          name: 'Vin2Grow',
           description: 'Payment for your order',
           order_id: razorpayOrder.data.orderId,
           handler: async function (response) {
@@ -138,7 +138,7 @@ const Payment = () => {
             contact: user?.phone || ''
           },
           theme: {
-            color: '#FFB800'
+            color: '#16a34a'
           },
           modal: {
             ondismiss: function () {
@@ -184,10 +184,10 @@ const Payment = () => {
 
   if (!orderDetails) {
     return (
-      <div className="min-h-screen bg-yellow-50 py-12 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-md mx-auto bg-white rounded-lg shadow-md p-6">
+      <div className="min-h-screen bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-md mx-auto bg-gray-800 rounded-lg shadow-md p-6">
           <div className="text-center">
-            <p className="text-gray-500">Loading order details...</p>
+            <p className="text-gray-300">Loading order details...</p>
           </div>
         </div>
       </div>
@@ -195,12 +195,12 @@ const Payment = () => {
   }
 
   return (
-    <div className="min-h-screen bg-yellow-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md mx-auto bg-white rounded-lg shadow-md p-6">
-        <h2 className="text-2xl font-bold text-gray-900 mb-6">Payment Details</h2>
+    <div className="min-h-screen bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md mx-auto bg-gray-800 rounded-lg shadow-md p-6">
+        <h2 className="text-2xl font-bold text-gray-100 mb-6">Payment Details</h2>
         
         {error && (
-          <div className="bg-red-50 text-red-500 p-4 rounded-md mb-4">
+          <div className="bg-red-900/50 text-red-400 p-4 rounded-md mb-4 border border-red-700">
             {error.message}
             {error.details && (
               <div className="text-sm mt-2">{error.details}</div>
@@ -209,7 +209,7 @@ const Payment = () => {
         )}
 
         {deliveryOTP && (
-          <div className="bg-green-50 text-green-600 p-4 rounded-md mb-4">
+          <div className="bg-green-900/50 text-green-400 p-4 rounded-md mb-4 border border-green-700">
             <p className="font-semibold">Delivery OTP: {deliveryOTP}</p>
             <p className="text-sm mt-2">Please keep this OTP handy for delivery verification.</p>
           </div>
@@ -218,46 +218,46 @@ const Payment = () => {
         <div className="space-y-4">
           {/* Payment Method Selection */}
           <div className="mb-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-3">Choose Payment Method</h3>
+            <h3 className="text-lg font-medium text-gray-100 mb-3">Choose Payment Method</h3>
             <div className="flex items-center space-x-6">
               <label className="inline-flex items-center">
                 <input
                   type="radio"
-                  className="form-radio text-primary-600 h-5 w-5"
+                  className="form-radio text-green-600 h-5 w-5"
                   name="paymentMethod"
                   value="online"
                   checked={selectedPaymentMethod === 'online'}
                   onChange={() => setSelectedPaymentMethod('online')}
                 />
-                <span className="ml-2 text-gray-700">Pay Online</span>
+                <span className="ml-2 text-gray-300">Pay Online</span>
               </label>
               <label className="inline-flex items-center">
                 <input
                   type="radio"
-                  className="form-radio text-primary-600 h-5 w-5"
+                  className="form-radio text-green-600 h-5 w-5"
                   name="paymentMethod"
                   value="cod"
                   checked={selectedPaymentMethod === 'cod'}
                   onChange={() => setSelectedPaymentMethod('cod')}
                 />
-                <span className="ml-2 text-gray-700">Cash on Delivery</span>
+                <span className="ml-2 text-gray-300">Cash on Delivery</span>
               </label>
             </div>
           </div>
 
-          <div className="border-t border-gray-200 pt-4">
-            <h3 className="text-lg font-medium text-gray-900">Order Summary</h3>
+          <div className="border-t border-gray-600 pt-4">
+            <h3 className="text-lg font-medium text-gray-100">Order Summary</h3>
             <div className="mt-4 space-y-2">
               {cart.map((item) => (
                 <div key={item._id} className="flex justify-between">
-                  <span>{item.product.name} x {item.quantity}</span>
-                  <span>₹{item.product.price * item.quantity}</span>
+                  <span className="text-gray-300">{item.product.name} x {item.quantity}</span>
+                  <span className="text-gray-300">₹{item.product.price * item.quantity}</span>
                 </div>
               ))}
-              <div className="border-t pt-2 font-semibold">
+              <div className="border-t border-gray-600 pt-2 font-semibold">
                 <div className="flex justify-between">
-                  <span>Total</span>
-                  <span>₹{orderDetails.total}</span>
+                  <span className="text-gray-100">Total</span>
+                  <span className="text-green-400">₹{orderDetails.total}</span>
                 </div>
               </div>
             </div>
@@ -266,7 +266,7 @@ const Payment = () => {
           <button
             onClick={handlePayment}
             disabled={loading}
-            className={`w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-white ${selectedPaymentMethod === 'online' ? 'bg-yellow-500 hover:bg-yellow-600 focus:ring-yellow-500' : 'bg-yellow-500 hover:bg-yellow-600 focus:ring-yellow-500'} focus:outline-none focus:ring-2 focus:ring-offset-2 ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
+            className={`w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-white ${selectedPaymentMethod === 'online' ? 'bg-green-600 hover:bg-green-700 focus:ring-green-500' : 'bg-green-600 hover:bg-green-700 focus:ring-green-500'} focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
           >
             {loading ? 'Processing...' : selectedPaymentMethod === 'online' ? 'Pay Online' : 'Place Order'}
           </button>
