@@ -49,7 +49,7 @@ const CancellationPolicy = () => {
                     For any queries regarding our cancellation policy, contact our support team:
                   </p>
                   <ul className="list-disc pl-6 space-y-3 mt-4 text-lg">
-                    <li>Email: maammaruchulu@gmail.com</li>
+                    <li>Email: support@vin2grow.com</li>
                     <li>Phone: +91 970-155-5435</li>
                     <li>WhatsApp: +91 970-155-5435</li>
                   </ul>
