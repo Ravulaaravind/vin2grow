@@ -23,8 +23,8 @@ const initializeRazorpayPayment = (orderData, onSuccess) => {
     key: orderData.keyId,
     amount: orderData.amount,
     currency: orderData.currency,
-    name: 'RUCHULU',
-    description: 'Payment for RUCHULU products',
+    name: 'Vin2Grow',
+    description: 'Payment for Vin2Grow products',
     order_id: orderData.orderId,
     handler: async (response) => {
       try {
@@ -49,7 +49,7 @@ const initializeRazorpayPayment = (orderData, onSuccess) => {
       contact: ''
     },
     theme: {
-      color: '#10B981' // Using the primary color from your theme
+      color: '#16a34a' // Updated to match frontend's primary-600 green color
     }
   };
 
