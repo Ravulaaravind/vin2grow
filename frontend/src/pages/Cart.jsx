@@ -226,52 +226,52 @@ const Cart = () => {
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: index * 0.05 }}
-                      className="p-6 flex items-center gap-6"
+                      className="p-6 md:p-8 lg:p-10 flex items-center gap-6 md:gap-8 lg:gap-10"
                     >
-                      <div className="flex-shrink-0 w-24 h-24 rounded-lg overflow-hidden bg-gray-700 border border-green-700">
+                      <div className="flex-shrink-0 w-24 h-24 md:w-32 md:h-32 lg:w-40 lg:h-40 rounded-lg overflow-hidden bg-gray-700 border border-green-700">
                         <img
                           src={getImageUrl(item?.product?.images?.[0])}
                           alt={item?.product?.name}
-                          className="w-full h-full object-cover"
+                          className="w-full h-full object-contain"
                         />
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between gap-4">
-                          <h3 className="text-lg font-medium text-gray-200 truncate flex-1">{item?.product?.name}</h3>
+                          <h3 className="text-lg md:text-xl lg:text-2xl font-medium text-gray-200 truncate flex-1">{item?.product?.name}</h3>
                           <div className="flex items-center gap-2">
-                            <p className="text-lg font-medium text-green-400">₹{item?.product?.price * item.quantity}</p>
+                            <p className="text-lg md:text-xl lg:text-2xl font-medium text-green-400">₹{item?.product?.price * item.quantity}</p>
                             <button
                               onClick={() => handleRemoveItem(item._id)}
                               disabled={isLoading}
-                              className="w-8 h-8 flex items-center justify-center rounded-full border border-green-700 text-green-400 hover:bg-gray-700 hover:text-green-300 transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                              className="w-8 h-8 md:w-10 md:h-10 lg:w-12 lg:h-12 flex items-center justify-center rounded-full border border-green-700 text-green-400 hover:bg-gray-700 hover:text-green-300 transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed"
                               title="Remove item"
                             >
-                              <FaTrash className="w-4 h-4" />
+                              <FaTrash className="w-4 h-4 md:w-5 md:h-5 lg:w-6 lg:h-6" />
                             </button>
                           </div>
                         </div>
-                        <p className="mt-1 text-sm text-gray-400">
+                        <p className="mt-2 text-sm md:text-base lg:text-lg text-gray-400">
                           ₹{item?.product?.price} per {
                             item?.product?.length && item?.product?.width && item?.product?.height
-                              ? <span><span className="text-gray-300 font-semibold">Length:</span>{item.product.length} × <span className="text-gray-300 font-semibold">Width:</span>{item.product.width} × <span className="text-gray-300 font-semibold">Height:</span>{item.product.height} cm</span>
+                              ? <span><span className="text-gray-300 font-semibold">Dimensions:</span> Length: {item.product.length} cm, Width: {item.product.width} cm, Height: {item.product.height} cm</span>
                               : 'item'
                           }
                         </p>
-                        <div className="mt-4 flex items-center gap-2">
+                        <div className="mt-4 md:mt-6 lg:mt-8 flex items-center gap-2 md:gap-3 lg:gap-4">
                           <button
                             onClick={() => handleQuantityChange(item._id, item.quantity - 1)}
                             disabled={isLoading || item.quantity <= (item.product?.minOrder || 1)}
-                            className="text-green-400 hover:text-green-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors border border-green-700 rounded-full w-8 h-8 flex items-center justify-center"
+                            className="text-green-400 hover:text-green-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors border border-green-700 rounded-full w-8 h-8 md:w-10 md:h-10 lg:w-12 lg:h-12 flex items-center justify-center"
                           >
-                            <FaMinus />
+                            <FaMinus className="w-3 h-3 md:w-4 md:h-4 lg:w-5 lg:h-5" />
                           </button>
-                          <span className="mx-2 text-gray-200 font-semibold">{item.quantity}</span>
+                          <span className="mx-2 md:mx-3 lg:mx-4 text-base md:text-lg lg:text-xl text-gray-200 font-semibold">{item.quantity}</span>
                           <button
                             onClick={() => handleQuantityChange(item._id, item.quantity + 1)}
                             disabled={isLoading || item.quantity >= (item.product?.maxOrder || 100)}
-                            className="text-green-400 hover:text-green-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors border border-green-700 rounded-full w-8 h-8 flex items-center justify-center"
+                            className="text-green-400 hover:text-green-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors border border-green-700 rounded-full w-8 h-8 md:w-10 md:h-10 lg:w-12 lg:h-12 flex items-center justify-center"
                           >
-                            <FaPlus />
+                            <FaPlus className="w-3 h-3 md:w-4 md:h-4 lg:w-5 lg:h-5" />
                           </button>
                         </div>
                       </div>
@@ -344,11 +344,11 @@ const Cart = () => {
                 {/* Delivery Date & Time */}
                 <div className="space-y-4 mb-6">
                   <div>
-                    <label className="block text-sm font-medium text-green-400 mb-1">Delivery Date</label>
+                    <label className="block text-base font-semibold text-green-400 mb-2">Delivery Date</label>
                     <select
                       value={selectedDeliveryDate}
                       onChange={(e) => setSelectedDeliveryDate(e.target.value)}
-                      className="w-full bg-gray-700 border-gray-700 text-gray-200 rounded-md focus:ring-green-500 focus:border-green-500"
+                      className="w-full bg-gray-700 border-gray-700 text-gray-200 rounded-md focus:ring-green-500 focus:border-green-500 py-3 px-4 text-base"
                     >
                       <option value="" className="text-gray-400">Select a date</option>
                       {getDeliveryDates().map((date) => (
@@ -357,11 +357,11 @@ const Cart = () => {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-green-400 mb-1">Delivery Time</label>
+                    <label className="block text-base font-semibold text-green-400 mb-2">Delivery Time</label>
                     <select
                       value={selectedTimeSlot}
                       onChange={(e) => setSelectedTimeSlot(e.target.value)}
-                      className="w-full bg-gray-700 border-gray-700 text-gray-200 rounded-md focus:ring-green-500 focus:border-green-500"
+                      className="w-full bg-gray-700 border-gray-700 text-gray-200 rounded-md focus:ring-green-500 focus:border-green-500 py-3 px-4 text-base"
                     >
                       <option value="" className="text-gray-400">Select a time slot</option>
                       {timeSlots.map((slot) => (
@@ -390,7 +390,7 @@ const Cart = () => {
                   disabled={isLoading || !selectedAddress || !selectedDeliveryDate || !selectedTimeSlot}
                   className="mt-6 w-full bg-green-700 text-white py-3 px-4 rounded-md hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
-                  {isLoading ? 'Processing...' : 'Proceed to Checkout'}
+                  {isLoading ? 'Processing...' : 'Confirm & Place Order'}
                 </motion.button>
               </div>
             </div>
