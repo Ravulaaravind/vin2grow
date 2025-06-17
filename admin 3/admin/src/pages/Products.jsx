@@ -135,11 +135,17 @@ const Products = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      // Capitalize category to match enum
+      const capitalizeCategory = (cat) => cat.replace(/\b\w/g, c => c.toUpperCase());
       const formDataToSend = new FormData();
 
       Object.keys(formData).forEach((key) => {
         if (key !== "images" && key !== "imagePreviews") {
-          formDataToSend.append(key, formData[key]);
+          if (key === "category") {
+            formDataToSend.append(key, capitalizeCategory(formData[key]));
+          } else {
+            formDataToSend.append(key, formData[key]);
+          }
         }
       });
 
@@ -295,7 +301,7 @@ const Products = () => {
                   <img
                     src={getImageUrl(product.images[0])}
                     alt={product.name}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-contain"
                   />
                   {product.images.length > 1 && (
                     <div className="absolute bottom-0 right-0 p-2 flex gap-2">
@@ -304,7 +310,7 @@ const Products = () => {
                           key={index}
                           src={getImageUrl(image)}
                           alt={`${product.name} ${index + 2}`}
-                          className="w-12 h-12 object-cover rounded-lg border-2 border-gray-800"
+                          className="w-12 h-12 object-contain rounded-lg border-2 border-gray-800"
                         />
                       ))}
                     </div>
@@ -514,7 +520,7 @@ const Products = () => {
                         <img
                           src={preview}
                           alt={`Preview ${index + 1}`}
-                          className="w-full h-32 object-cover rounded-lg border border-gray-600"
+                          className="w-full h-32 object-contain rounded-lg border border-gray-600"
                         />
                         <button
                           type="button"
@@ -625,20 +631,20 @@ const Products = () => {
                   </>
                 )}
 
-                <div className="flex gap-4 pt-4">
+                <div className="sticky bottom-0 left-0 right-0 z-10 bg-gray-800 border-t border-green-600 flex gap-4 pt-0 pb-2 px-2">
                   <button
                     type="button"
                     onClick={() => {
                       setIsModalOpen(false);
                       setEditingProductId(null);
                     }}
-                    className="flex-1 bg-gray-700 text-white px-4 py-2 rounded-md hover:bg-gray-600 transition-colors duration-200"
+                    className="flex-1 bg-gray-700 text-white px-2 py-1 text-sm rounded hover:bg-gray-600 transition-colors duration-200"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    className="flex-1 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md transition-colors duration-200"
+                    className="flex-1 bg-green-600 hover:bg-green-700 text-white px-2 py-1 text-sm rounded transition-colors duration-200"
                   >
                     {editingProductId ? "Update Product" : "Add Product"}
                   </button>
