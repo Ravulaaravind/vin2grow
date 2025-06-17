@@ -1,565 +1,659 @@
-import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { useCart } from '../context/CartContext';
-import { toast } from 'react-hot-toast';
-import { products as productsApi } from '../services/api';
-import { mockProducts } from '../data/mockProducts';
+import { useState, useEffect, useRef } from "react";
+import toast from "react-hot-toast";
+import adminApi from "../services/api";
 
-const BACKEND_URL = 'https://vin2growbackend.onrender.com/';
-
-// Helper function to get image URL
-const getImageUrl = (img) => {
-  if (!img) return '/placeholder.svg';
-  if (img.startsWith('http')) return img;
-  const cleanImgPath = img.startsWith('/') ? img : `/${img}`;
-  return BACKEND_URL + cleanImgPath.replace(/^\/+/, '');
-};
-
-// Image Modal Component
-const ImageModal = ({ isOpen, onClose, product, quantities, handleQuantityChange, handleAddToCart }) => {
-  const [selectedImage, setSelectedImage] = useState(0);
-  
-  React.useEffect(() => {
-    setSelectedImage(0);
-  }, [isOpen, product]);
-
-  if (!isOpen) return null;
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-75 p-4" onClick={onClose}>
-      <div 
-        className="relative bg-gray-800 rounded-lg max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col border border-green-700"
-        onClick={e => e.stopPropagation()}
-      >
-        <button
-          onClick={onClose}
-          className="absolute top-2 right-2 text-white hover:text-gray-300 transition-colors z-50 bg-gray-700 rounded-full p-1"
-        >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
-        
-        <div className="overflow-y-auto flex-1">
-          <div className="md:flex">
-            {/* Images Section */}
-            <div className="md:w-1/2 p-4">
-              {/* Main Image */}
-              <div className="relative w-full h-64 bg-gray-700 rounded-lg mb-4 flex items-center justify-center">
-                <img
-                  src={product?.images?.[selectedImage] ? getImageUrl(product.images[selectedImage]) : '/placeholder.svg'}
-                  alt={product?.name}
-                  className="w-full h-full object-contain"
-                />
-                {product?.discount > 0 && (
-                  <div className="absolute top-2 right-2 bg-green-600 text-white px-2 py-1 rounded-full text-xs font-medium">
-                    {product.discount}% OFF
-                  </div>
-                )}
-              </div>
-
-              {/* Thumbnails */}
-              <div className="flex gap-2 overflow-x-auto pb-2">
-                {(product?.images || []).map((image, index) => (
-                  <button
-                    key={index}
-                    onClick={() => setSelectedImage(index)}
-                    className={`flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border ${selectedImage === index ? 'border-green-500 ring-2 ring-green-400' : 'border-gray-600'}`}
-                  >
-                    <img
-                      src={getImageUrl(image)}
-                      alt={`${product?.name} ${index + 1}`}
-                      className="w-full h-full object-cover"
-                    />
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Product Details Section */}
-            <div className="md:w-1/2 p-4 border-t md:border-t-0 md:border-l border-gray-700">
-              <h2 className="text-xl font-bold text-white mb-2">{product?.name}</h2>
-              
-              {product?.discount > 0 && (
-                <span className="inline-block bg-green-600 text-white text-xs font-semibold px-2 py-1 rounded-full mb-2">
-                  Limited time deal
-                </span>
-              )}
-
-              <p className="text-sm text-gray-300 mb-3">{product?.description}</p>
-              
-              {/* Product Tags */}
-              {product?.tags && product.tags.length > 0 && (
-                <div className="mb-3">
-                  <h4 className="text-sm font-medium text-gray-400 mb-1">Tags:</h4>
-                  <div className="flex flex-wrap gap-1">
-                    {product.tags.map((tag, index) => (
-                      <span key={index} className="bg-gray-700 text-gray-300 text-xs px-2 py-1 rounded-full">
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
-              
-              {/* Product Dimensions */}
-              {product.length && product.width && product.height ? (
-                <div className="mb-1">
-                  <p className="text-xs text-gray-400">
-                    <span className="text-gray-300 font-semibold">Dimensions:</span> {product.length} × {product.width} × {product.height} cm
-                  </p>
-                </div>
-              ) : null}
-              
-              {/* Stock Information */}
-              {product.stock !== undefined ? (
-                <div className="mb-1">
-                  <p className="text-xs text-gray-400">
-                    <span className="text-gray-300 font-semibold">Stock:</span> {product.stock} available
-                  </p>
-                </div>
-              ) : null}
-              
-              {/* Price Section */}
-              <div className="mb-3">
-                <div className="flex items-baseline gap-1">
-                  <span className="text-xl font-bold text-white">₹{product?.price}</span>
-                  {product?.discount > 0 && (
-                    <span className="text-sm text-gray-400 line-through">
-                      ₹{Math.round(product?.price * (1 + product?.discount / 100))}
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              {/* Product Rating and Reviews */}
-              {product?.rating && product?.reviews !== undefined && (
-                <div className="flex items-center mb-3">
-                  <div className="flex text-yellow-400 mr-1">
-                    {[...Array(5)].map((_, i) => (
-                      <svg
-                        key={i}
-                        className={`w-4 h-4 ${i < Math.floor(product.rating) ? 'fill-current' : 'text-gray-600'}`}
-                        viewBox="0 0 20 20"
-                        fill="currentColor"
-                      >
-                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.538 1.118l-2.8-2.034a1 1 0 00-1.176 0l-2.8 2.034c-.783.57-1.838-.197-1.538-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.729c-.783-.57-.381-1.81.588-1.81h3.462a1 1 0 00.95-.69l1.07-3.292z" />
-                      </svg>
-                    ))}
-                  </div>
-                  <span className="text-xs text-gray-400">({product.reviews} reviews)</span>
-                </div>
-              )}
-
-              {/* Quantity Controls */}
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-400 mb-1">Quantity</label>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center border border-gray-600 rounded-md overflow-hidden">
-                    <button
-                      onClick={() => handleQuantityChange(product?._id, -1)}
-                      className="px-2 py-1 bg-gray-700 hover:bg-gray-600 active:bg-green-600 transition-colors text-gray-300 active:text-white text-sm"
-                    >
-                      -
-                    </button>
-                    <span className="px-3 py-1 text-center min-w-[30px] text-sm text-white">
-                      {quantities[product?._id] || 1}
-                    </span>
-                    <button
-                      onClick={() => handleQuantityChange(product?._id, 1)}
-                      className="px-2 py-1 bg-gray-700 hover:bg-gray-600 active:bg-green-600 transition-colors text-gray-300 active:text-white text-sm"
-                    >
-                      +
-                    </button>
-                  </div>
-                  {/* Add to Cart Button */}
-                  <button
-                    onClick={() => {
-                      handleAddToCart(product);
-                      onClose();
-                    }}
-                    className="bg-green-600 text-white px-4 py-3 rounded-lg hover:bg-green-700 transition-colors font-medium text-sm"
-                  >
-                    Add to Cart
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
 const Products = () => {
-  const { addToCart } = useCart();
   const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [editingProductId, setEditingProductId] = useState(null);
+  const toastShownRef = useRef(false);
+  const [formData, setFormData] = useState({
+    name: "",
+    description: "",
+    price: "",
+    category: "shop all",
+    stock: "",
+    length: "",
+    width: "",
+    height: "",
+    images: [],
+    imagePreviews: [],
+    discount: 0,
+    isDiscountActive: false,
+    discountStartDate: "",
+    discountEndDate: "",
+    offerPrice: "",
+    offerStartDate: "",
+    offerEndDate: "",
+    isOfferActive: false,
+  });
 
-  const [searchQuery, setSearchQuery] = useState('');
-  const [sortBy, setSortBy] = useState('popular');
-  const [priceRange, setPriceRange] = useState([0, 10000]);
-  const [selectedTags, setSelectedTags] = useState([]);
-  const [quantities, setQuantities] = useState({});
-  const [selectedProduct, setSelectedProduct] = useState(null);
-  const [showAddedToCartMessage, setShowAddedToCartMessage] = useState(false);
-  const [showMobileFilters, setShowMobileFilters] = useState(false);
-
-  const allTags = [...new Set(products.flatMap(product => product.tags))];
-
-  // Static price range values
-  const priceSteps = [0, 500, 1000, 2000, 5000, 10000];
-
-  const filteredProducts = products
-    .filter(product => product.name.toLowerCase().includes(searchQuery.toLowerCase()))
-    .filter(product => product.price >= priceRange[0] && product.price <= priceRange[1])
-    .filter(product => selectedTags.length === 0 || selectedTags.some(tag => product.tags.includes(tag)))
-    .sort((a, b) => {
-      switch (sortBy) {
-        case 'price-low':
-          return a.price - b.price;
-        case 'price-high':
-          return b.price - a.price;
-        case 'rating':
-          return b.rating - a.rating;
-        case 'newest':
-          return b._id - a._id;
-        default:
-          return b.reviews - a.reviews;
-      }
-    });
+  const CATEGORIES = [
+    "Shop all",
+    "Sanchi Stupa",
+    "Warli House",
+    "Tiger Crafting",
+    "Bamboo Peacock",
+    "Miniaure Ship",
+    "Bamboo Trophy",
+    "Bamboo Ganesha",
+    "Bamboo Swords",
+    "Tribal Mask -1",
+    "Tribal Mask -2",
+    "Bamboo Dry Fruit Tray",
+    "Bamboo Tissue Paper Holder",
+    "Bamboo Strip Tray",
+    "Bamboo Mobile Booster",
+    "Bamboo Card-Pen Holder"
+  ];
 
   useEffect(() => {
     const fetchProducts = async () => {
+      setIsLoading(true);
       try {
-        setLoading(true);
-        const response = await productsApi.getAll();
-        // Add the Furley House product
-        const productsWithFurley = [
-          ...response.data,
-          {
-            _id: 'Warli-house',
-            name: 'Warli House',
-            description: 'Made with bamboo and crafting bamboo strips',
-            price: 4999,
-            discount: 25,
-            length: 29,
-            width: 29,
-            height: 33,
-            stock: 10,
-            rating: 4.5,
-            reviews: 15,
-            tags: ['bamboo', 'house', 'decor'],
-            images: ['https://res.cloudinary.com/dnbqgzh4t/image/upload/v1749717841/cwuak5ryngud40gtpe1c.jpg']
-          }
-        ];
-        setProducts(productsWithFurley);
+        const response = await adminApi.products.getAll();
+        setProducts(response.data);
+        if (!toastShownRef.current) {
+          toast.success("Products loaded successfully");
+          toastShownRef.current = true;
+        }
       } catch (error) {
-        console.error('Error fetching products:', error);
-        setError('Failed to load products. Please try again later.');
-        setProducts(mockProducts);
+        console.error("Failed to load products:", error);
+        if (!toastShownRef.current) {
+          toast.error("Failed to load products");
+          toastShownRef.current = true;
+        }
       } finally {
-        setLoading(false);
+        setIsLoading(false);
       }
     };
 
     fetchProducts();
+
+    return () => {
+      toastShownRef.current = false;
+    };
   }, []);
 
-  const handleQuantityChange = (productId, value) => {
-    setQuantities(prev => ({
+  const handleImageChange = (e) => {
+    const files = Array.from(e.target.files);
+
+    if (formData.images.length + files.length > 4) {
+      toast.error("Maximum 4 images allowed");
+      return;
+    }
+
+    const invalidFiles = files.filter((file) => file.size > 2 * 1024 * 1024);
+    if (invalidFiles.length > 0) {
+      toast.error("Some images exceed 2MB limit");
+      return;
+    }
+
+    const getFileIdentifier = (file) => `${file.name}-${file.size}`;
+    const existingFileIdentifiers = new Set(
+      formData.images.map(getFileIdentifier)
+    );
+    const duplicateFiles = files.filter((file) =>
+      existingFileIdentifiers.has(getFileIdentifier(file))
+    );
+
+    if (duplicateFiles.length > 0) {
+      toast.error("Some images are already added");
+      return;
+    }
+
+    const newPreviews = files.map((file) => URL.createObjectURL(file));
+
+    setFormData((prev) => ({
       ...prev,
-      [productId]: Math.max(1, (prev[productId] || 1) + value)
+      images: [...prev.images, ...files],
+      imagePreviews: [...prev.imagePreviews, ...newPreviews],
     }));
   };
 
-  const handleAddToCart = async (product) => {
+  const removeImage = (index) => {
+    setFormData((prev) => {
+      const newImages = [...prev.images];
+      const newPreviews = [...prev.imagePreviews];
+
+      URL.revokeObjectURL(newPreviews[index]);
+
+      newImages.splice(index, 1);
+      newPreviews.splice(index, 1);
+
+      return {
+        ...prev,
+        images: newImages,
+        imagePreviews: newPreviews,
+      };
+    });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
     try {
-      const quantity = quantities[product._id] || 1;
-      await addToCart({
-        ...product,
-        quantity
+      // Capitalize category to match enum
+      const capitalizeCategory = (cat) => cat.replace(/\b\w/g, c => c.toUpperCase());
+      const formDataToSend = new FormData();
+
+      Object.keys(formData).forEach((key) => {
+        if (key !== "images" && key !== "imagePreviews") {
+          if (key === "category") {
+            formDataToSend.append(key, capitalizeCategory(formData[key]));
+          } else {
+            formDataToSend.append(key, formData[key]);
+          }
+        }
       });
-      setShowAddedToCartMessage(true);
-      setTimeout(() => {
-        setShowAddedToCartMessage(false);
-      }, 2000);
+
+      formData.images.forEach((image) => {
+        formDataToSend.append(`images`, image);
+      });
+
+      formDataToSend.append("isAvailable", true);
+      formDataToSend.append("expiryDays", 7);
+
+      let response;
+      if (editingProductId) {
+        response = await adminApi.products.update(
+          editingProductId,
+          formDataToSend
+        );
+        toast.success("Product updated successfully!");
+      } else {
+        response = await adminApi.products.create(formDataToSend);
+        toast.success("Product created successfully!");
+      }
+
+      const productsResponse = await adminApi.products.getAll();
+      setProducts(productsResponse.data);
+
+      setIsModalOpen(false);
+      setEditingProductId(null);
     } catch (error) {
-      console.error('Error adding to cart:', error);
-      toast.error('Failed to add item to cart. Please try again.');
+      console.error("Failed to save product:", error);
+      toast.error(error.response?.data?.error || "Failed to save product");
     }
   };
 
-  return (
-    <div className="min-h-screen bg-gray-900 flex flex-col">
-      {showAddedToCartMessage && (
-        <div className="fixed top-20 left-1/2 -translate-x-1/2 bg-green-700 text-white px-4 py-2 rounded-md shadow-lg z-50 text-sm font-medium">
-          Added to Cart Successfully
-        </div>
-      )}
+  const handleEdit = async (product) => {
+    try {
+      setEditingProductId(product._id);
+      setFormData({
+        name: product.name,
+        description: product.description,
+        price: product.price,
+        category: product.category,
+        stock: product.stock,
+        length: product.length || "",
+        width: product.width || "",
+        height: product.height || "",
+        images: [],
+        imagePreviews: product.images.map((image) => getImageUrl(image)),
+        discount: product.discount || 0,
+        isDiscountActive: product.isDiscountActive || false,
+        discountStartDate: product.discountStartDate || "",
+        discountEndDate: product.discountEndDate || "",
+        offerPrice: product.offerPrice || "",
+        offerStartDate: product.offerStartDate || "",
+        offerEndDate: product.offerEndDate || "",
+        isOfferActive: product.isOfferActive || false,
+      });
+      setIsModalOpen(true);
+    } catch (error) {
+      console.error("Failed to load product for editing:", error);
+      toast.error("Failed to load product for editing");
+    }
+  };
 
-      {/* Fixed Header with Search and Filters */}
-      <div className="fixed top-0 left-0 right-0 z-10 bg-gray-800 shadow-md border-b border-green-700 pt-[4.5rem]">
-        <div className="max-w-screen-xl mx-auto">
-          {/* Search Bar */}
-          <div className="px-4 py-3">
-            <div className="relative flex items-center">
-              <div className="relative w-full">
-                <input
-                  type="text"
-                  placeholder="Search wooden treasures..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-10 py-2 text-sm rounded-lg border border-green-700 bg-gray-700 text-white placeholder-green-400 focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                />
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+  const handleDelete = async (productId) => {
+    try {
+      await adminApi.products.delete(productId);
+      const response = await adminApi.products.getAll();
+      setProducts(response.data);
+      toast.success("Product deleted successfully");
+    } catch (error) {
+      console.error("Failed to delete product:", error);
+      toast.error(error.response?.data?.error || "Failed to delete product");
+    }
+  };
+
+  const calculateDiscount = (price, offerPrice) => {
+    if (!offerPrice) return 0;
+    return Math.round(((price - offerPrice) / price) * 100);
+  };
+
+  const calculateDiscountedPrice = (price, discount) => {
+    if (!discount) return price;
+    return price - (price * discount) / 100;
+  };
+
+  const getImageUrl = (imagePath) => {
+    if (!imagePath) return "";
+    if (imagePath.startsWith("http")) return imagePath;
+    const cleanPath = imagePath.replace(/^\/+/, '');
+    return `${API_URL}/${cleanPath}`;
+  };
+
+  return (
+    <div className="p-4 md:p-6 bg-gray-900 min-h-screen pb-20 md:pb-6">
+      <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-6 gap-4">
+        <h1 className="text-2xl md:text-3xl font-bold text-white">
+          Products Management
+        </h1>
+        <button
+          onClick={() => {
+            setFormData({
+              name: "",
+              description: "",
+              price: "",
+              category: "shop all",
+              stock: "",
+              length: "",
+              width: "",
+              height: "",
+              images: [],
+              imagePreviews: [],
+              discount: 0,
+              isDiscountActive: false,
+              discountStartDate: "",
+              discountEndDate: "",
+              offerPrice: "",
+              offerStartDate: "",
+              offerEndDate: "",
+              isOfferActive: false,
+            });
+            setIsModalOpen(true);
+          }}
+          className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md transition-colors duration-200 w-full md:w-auto flex items-center justify-center"
+        >
+          <svg 
+            xmlns="http://www.w3.org/2000/svg" 
+            className="h-5 w-5 mr-2" 
+            viewBox="0 0 20 20" 
+            fill="currentColor"
+          >
+            <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
+          </svg>
+          Add Product
+        </button>
+      </div>
+
+      {/* Products Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        {products.map((product) => (
+          <div
+            key={product._id}
+            className="bg-gray-800 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200 overflow-hidden flex flex-col border border-green-600"
+          >
+            {/* Product Image */}
+            <div className="w-full h-48 relative group overflow-hidden">
+              {product.isOfferActive && (
+                <div className="absolute top-2 left-2 bg-green-600 text-white px-2 py-1 rounded-md text-sm font-bold">
+                  {calculateDiscount(product.price, product.offerPrice)}% OFF
+                </div>
+              )}
+              {product.images && product.images.length > 0 ? (
+                <div className="relative h-full">
+                  <img
+                    src={getImageUrl(product.images[0])}
+                    alt={product.name}
+                    className="w-full h-full object-contain"
+                  />
+                  {product.images.length > 1 && (
+                    <div className="absolute bottom-0 right-0 p-2 flex gap-2">
+                      {product.images.slice(1).map((image, index) => (
+                        <img
+                          key={index}
+                          src={getImageUrl(image)}
+                          alt={`${product.name} ${index + 2}`}
+                          className="w-12 h-12 object-contain rounded-lg border-2 border-gray-800"
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="w-full h-full bg-gray-700 flex items-center justify-center">
+                  <span className="text-gray-400">No image available</span>
+                </div>
+              )}
+            </div>
+            <div className="p-4">
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center">
+                <p className="text-sm font-semibold text-white">
+                  {product.name}
+                </p>
+                <p className="text-xs text-gray-400">
+                  {product.length && product.width && product.height 
+                    ? `${product.length}×${product.width}×${product.height} cm`
+                    : 'Dimensions not set'
+                  }
+                </p>
+              </div>
+              <div className="mt-2 flex justify-between items-center">
+                <span className="text-sm font-bold text-green-400">
+                  ₹{product.price.toLocaleString()}
+                </span>
+                <div className="flex items-center space-x-2">
+                  <button
+                    onClick={() => handleEdit(product)}
+                    className="text-blue-400 hover:text-blue-300 text-xs px-2 py-1 rounded bg-gray-700"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => handleDelete(product._id)}
+                    className="text-red-400 hover:text-red-300 text-xs px-2 py-1 rounded bg-gray-700"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Add/Edit Product Modal */}
+      {isModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50">
+          <div className="bg-gray-800 rounded-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto border border-green-600">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-bold text-white">
+                  {editingProductId ? "Edit Product" : "Add New Product"}
+                </h2>
+                <button
+                  onClick={() => {
+                    setIsModalOpen(false);
+                    setEditingProductId(null);
+                  }}
+                  className="text-gray-400 hover:text-white"
+                >
                   <svg
-                    className="w-5 h-5 text-green-400"
+                    className="w-6 h-6"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
                   >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
                   </svg>
-                </div>
-                {searchQuery && (
-                  <button
-                    onClick={() => setSearchQuery('')}
-                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-green-400 hover:text-green-300"
-                  >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                )}
+                </button>
               </div>
-            </div>
-          </div>
-
-          {/* Mobile Filter Button */}
-          <div className="md:hidden flex justify-center pb-3 px-4">
-            <button
-              onClick={() => setShowMobileFilters(!showMobileFilters)}
-              className="bg-green-700 text-white px-4 py-2 rounded-md text-sm font-medium"
-            >
-              {showMobileFilters ? 'Hide Filters' : 'Show Filters'}
-            </button>
-          </div>
-
-          {/* Mobile Filters - Shown when toggled */}
-          {showMobileFilters && (
-            <div className="md:hidden bg-gray-800 px-4 py-3 border-t border-green-700">
-              <div className="grid grid-cols-2 gap-4">
-                {/* Price Range */}
+              <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                  <h4 className="text-xs font-semibold mb-1 text-gray-300">Price Range</h4>
+                  <label className="block text-sm font-medium text-gray-300 mb-1">
+                    Product Name
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.name}
+                    onChange={(e) =>
+                      setFormData({ ...formData, name: e.target.value })
+                    }
+                    className="mt-1 block w-full rounded-md bg-gray-700 border-gray-600 text-white focus:border-green-500 focus:ring-green-500"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-1">
+                    Description
+                  </label>
+                  <textarea
+                    value={formData.description}
+                    onChange={(e) =>
+                      setFormData({ ...formData, description: e.target.value })
+                    }
+                    className="mt-1 block w-full rounded-md bg-gray-700 border-gray-600 text-white focus:border-green-500 focus:ring-green-500"
+                    rows="3"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-1">
+                    Price
+                  </label>
+                  <input
+                    type="number"
+                    value={formData.price}
+                    onChange={(e) =>
+                      setFormData({ ...formData, price: e.target.value })
+                    }
+                    className="mt-1 block w-full rounded-md bg-gray-700 border-gray-600 text-white focus:border-green-500 focus:ring-green-500"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-1">
+                    Category
+                  </label>
                   <select
-                    value={priceRange[1]}
-                    onChange={(e) => setPriceRange([0, parseInt(e.target.value)])}
-                    className="w-full p-2 border border-green-700 rounded-md text-xs bg-gray-700 text-white"
+                    name="category"
+                    value={formData.category}
+                    onChange={(e) =>
+                      setFormData({ ...formData, category: e.target.value })
+                    }
+                    className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-green-500"
+                    required
                   >
-                    {priceSteps.map(step => (
-                      <option key={step} value={step}>Up to ₹{step}</option>
+                    {CATEGORIES.map((category) => (
+                      <option key={category} value={category.toLowerCase()}>
+                        {category}
+                      </option>
                     ))}
                   </select>
                 </div>
-
-                {/* Sorting */}
                 <div>
-                  <h4 className="text-xs font-semibold mb-1 text-gray-300">Sort By</h4>
-                  <select
-                    value={sortBy}
-                    onChange={(e) => setSortBy(e.target.value)}
-                    className="w-full p-2 border border-green-700 rounded-md text-xs bg-gray-700 text-white"
-                  >
-                    <option value="popular">Most Popular</option>
-                    <option value="price-low">Price: Low to High</option>
-                    <option value="price-high">Price: High to Low</option>
-                    <option value="rating">Highest Rating</option>
-                    <option value="newest">Newest</option>
-                  </select>
+                  <label className="block text-sm font-medium text-gray-300 mb-1">
+                    Stock
+                  </label>
+                  <input
+                    type="number"
+                    value={formData.stock}
+                    onChange={(e) =>
+                      setFormData({ ...formData, stock: e.target.value })
+                    }
+                    className="mt-1 block w-full rounded-md bg-gray-700 border-gray-600 text-white focus:border-green-500 focus:ring-green-500"
+                    required
+                  />
                 </div>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Main Content Area - Scrollable */}
-      <div className="flex-1 overflow-y-auto pt-[10rem] md:pt-20">
-        <div className="max-w-screen-xl mx-auto px-4">
-          <div className="flex flex-col md:flex-row">
-            {/* Desktop Filters Sidebar - Fixed */}
-            <div className="hidden md:block w-64 mr-6">
-              <div className="sticky top-40 bg-gray-800 p-4 rounded-lg border border-green-700 h-fit">
-                <h3 className="text-lg font-semibold mb-4 text-green-400">Filters</h3>
-                
-                {/* Price Range */}
-                <div className="mb-6">
-                  <h4 className="text-sm font-semibold mb-3 text-gray-300">Price Range</h4>
-                  <div className="px-2">
-                    <select
-                      value={priceRange[1]}
-                      onChange={(e) => setPriceRange([0, parseInt(e.target.value)])}
-                      className="w-full p-2 border border-green-700 rounded-md text-sm bg-gray-700 text-white"
-                    >
-                      {priceSteps.map(step => (
-                        <option key={step} value={step}>Up to ₹{step}</option>
-                      ))}
-                    </select>
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-1">
+                      Length (cm)
+                    </label>
+                    <input
+                      type="number"
+                      value={formData.length}
+                      onChange={(e) =>
+                        setFormData({ ...formData, length: e.target.value })
+                      }
+                      className="mt-1 block w-full rounded-md bg-gray-700 border-gray-600 text-white focus:border-green-500 focus:ring-green-500"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-1">
+                      Width (cm)
+                    </label>
+                    <input
+                      type="number"
+                      value={formData.width}
+                      onChange={(e) =>
+                        setFormData({ ...formData, width: e.target.value })
+                      }
+                      className="mt-1 block w-full rounded-md bg-gray-700 border-gray-600 text-white focus:border-green-500 focus:ring-green-500"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-1">
+                      Height (cm)
+                    </label>
+                    <input
+                      type="number"
+                      value={formData.height}
+                      onChange={(e) =>
+                        setFormData({ ...formData, height: e.target.value })
+                      }
+                      className="mt-1 block w-full rounded-md bg-gray-700 border-gray-600 text-white focus:border-green-500 focus:ring-green-500"
+                      required
+                    />
                   </div>
                 </div>
-
-                {/* Sorting */}
-                <div className="mb-6">
-                  <h4 className="text-sm font-semibold mb-2 text-gray-300">Sort By</h4>
-                  <select
-                    value={sortBy}
-                    onChange={(e) => setSortBy(e.target.value)}
-                    className="w-full p-2 border border-green-700 rounded-md text-sm bg-gray-700 text-white"
-                  >
-                    <option value="popular">Most Popular</option>
-                    <option value="price-low">Price: Low to High</option>
-                    <option value="price-high">Price: High to Low</option>
-                    <option value="rating">Highest Rating</option>
-                    <option value="newest">Newest</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-
-            {/* Products Grid */}
-            <div className="flex-1">
-              {loading ? (
-                <div className="flex justify-center items-center h-64">
-                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
-                </div>
-              ) : error ? (
-                <div className="text-center text-red-400 py-10">{error}</div>
-              ) : (
-                <>
-                  {filteredProducts.length === 0 ? (
-                    <div className="text-center text-green-400 font-medium py-10">
-                      No wooden treasures found. Try a different search.
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                      {filteredProducts.map((product) => (
-                        <motion.div 
-                          key={product._id} 
-                          className="bg-gray-800 rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow duration-200 border border-green-700"
-                          whileHover={{ y: -5 }}
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    Product Images (up to 4)
+                  </label>
+                  <div className="grid grid-cols-2 gap-4 mb-4">
+                    {formData.imagePreviews.map((preview, index) => (
+                      <div key={index} className="relative">
+                        <img
+                          src={preview}
+                          alt={`Preview ${index + 1}`}
+                          className="w-full h-32 object-contain rounded-lg border border-gray-600"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removeImage(index)}
+                          className="absolute top-1 right-1 bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-red-700"
                         >
-                          {/* Product Image */}
-                          <div className="relative">
-                            {product.images && product.images.length > 0 ? (
-                              <div 
-                                className="cursor-pointer"
-                                onClick={() => setSelectedProduct(product)}
-                              >
-                                <img
-                                  src={getImageUrl(product.images[0])}
-                                  alt={product.name}
-                                  className="w-full h-40 object-cover hover:opacity-90 transition-opacity"
-                                />
-                              </div>
-                            ) : (
-                              <div className="w-full h-40 bg-gray-700 flex items-center justify-center">
-                                <span className="text-green-400 text-sm">No image available</span>
-                              </div>
-                            )}
-                            {product.discount > 0 && (
-                              <div className="absolute top-1 right-1 bg-green-700 text-white px-2 py-1 rounded text-xs font-medium">
-                                {product.discount}% OFF
-                              </div>
-                            )}
+                          ×
+                        </button>
+                      </div>
+                    ))}
+                    {formData.imagePreviews.length < 4 && (
+                      <div className="border-2 border-dashed border-gray-600 rounded-lg flex items-center justify-center h-32">
+                        <label className="cursor-pointer p-4 text-center">
+                          <input
+                            type="file"
+                            accept="image/*"
+                            multiple
+                            onChange={handleImageChange}
+                            className="hidden"
+                          />
+                          <div className="text-gray-400">
+                            <svg
+                              className="mx-auto h-8 w-8"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                              />
+                            </svg>
+                            <p className="mt-1 text-sm">Add Images</p>
                           </div>
+                        </label>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-1">
+                    Discount (%)
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    value={formData.discount}
+                    onChange={(e) => {
+                      const discount = parseFloat(e.target.value) || 0;
+                      setFormData({
+                        ...formData,
+                        discount,
+                        isDiscountActive: discount > 0,
+                      });
+                    }}
+                    className="mt-1 block w-full rounded-md bg-gray-700 border-gray-600 text-white focus:border-green-500 focus:ring-green-500"
+                  />
+                </div>
 
-                          {/* Product Info */}
-                          <div className="p-3 bg-gray-800">
-                            <h3 className="text-sm font-semibold text-white line-clamp-1">{product.name}</h3>
-                            <p className="text-xs text-gray-300 mt-1 line-clamp-2">{product.description}</p>
-                        
-                            {/* Product Dimensions */}
-                            {product.length && product.width && product.height ? (
-                              <div className="mt-1">
-                                <p className="text-xs text-green-400">
-                                  📏 {product.length}×{product.width}×{product.height} cm
-                                </p>
-                              </div>
-                            ) : null}
-                        
-                            {/* Stock Information */}
-                            {product.stock !== undefined ? (
-                              <div className="mt-1">
-                                <p className="text-xs text-green-400">
-                                  📦 {product.stock} in stock
-                                </p>
-                              </div>
-                            ) : null}
-                        
-                            {/* Price and Discount */}
-                            <div className="mt-2">
-                              <div className="flex items-baseline gap-1">
-                                <span className="text-sm font-bold text-white">₹{product.price}</span>
-                                {product.discount > 0 && (
-                                  <span className="text-xs text-gray-400 line-through">
-                                    ₹{Math.round(product.price * (1 + product.discount / 100))}
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-
-                            {/* Quantity Controls and Add to Cart */}
-                            <div className="mt-3 flex items-center justify-between">
-                              <div className="flex items-center border border-green-700 rounded-md overflow-hidden">
-                                <button
-                                  onClick={() => handleQuantityChange(product._id, -1)}
-                                  className="px-2 py-1 bg-gray-700 hover:bg-gray-600 text-gray-300 text-sm"
-                                >
-                                  -
-                                </button>
-                                <span className="px-2 py-1 text-center min-w-[24px] bg-gray-800 text-sm text-white">
-                                  {quantities[product._id] || 1}
-                                </span>
-                                <button
-                                  onClick={() => handleQuantityChange(product._id, 1)}
-                                  className="px-2 py-1 bg-gray-700 hover:bg-gray-600 text-gray-300 text-sm"
-                                >
-                                  +
-                                </button>
-                              </div>
-                              <button
-                                onClick={() => handleAddToCart(product)}
-                                className="bg-green-700 text-white px-3 py-1 rounded-md hover:bg-green-600 text-sm font-medium"
-                              >
-                                Add
-                              </button>
-                            </div>
-                          </div>
-                        </motion.div>
-                      ))}
+                {formData.discount > 0 && (
+                  <>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-300 mb-1">
+                          Discount Start Date
+                        </label>
+                        <input
+                          type="date"
+                          value={formData.discountStartDate}
+                          onChange={(e) =>
+                            setFormData({
+                              ...formData,
+                              discountStartDate: e.target.value,
+                            })
+                          }
+                          className="mt-1 block w-full rounded-md bg-gray-700 border-gray-600 text-white focus:border-green-500 focus:ring-green-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-300 mb-1">
+                          Discount End Date
+                        </label>
+                        <input
+                          type="date"
+                          value={formData.discountEndDate}
+                          onChange={(e) =>
+                            setFormData({
+                              ...formData,
+                              discountEndDate: e.target.value,
+                            })
+                          }
+                          className="mt-1 block w-full rounded-md bg-gray-700 border-gray-600 text-white focus:border-green-500 focus:ring-green-500"
+                        />
+                      </div>
                     </div>
-                  )}
-                </>
-              )}
+                    <div className="bg-green-900/30 p-4 rounded-md border border-green-600">
+                      <p className="text-sm text-green-300">
+                        Discounted Price: ₹
+                        {calculateDiscountedPrice(
+                          formData.price,
+                          formData.discount
+                        ).toFixed(2)}
+                      </p>
+                    </div>
+                  </>
+                )}
+
+                <div className="sticky bottom-0 left-0 right-0 z-10 bg-gray-800 border-t border-green-600 flex gap-4 pt-0 pb-2 px-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsModalOpen(false);
+                      setEditingProductId(null);
+                    }}
+                    className="flex-1 bg-gray-700 text-white px-2 py-1 text-sm rounded hover:bg-gray-600 transition-colors duration-200"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="flex-1 bg-green-600 hover:bg-green-700 text-white px-2 py-1 text-sm rounded transition-colors duration-200"
+                  >
+                    {editingProductId ? "Update Product" : "Add Product"}
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
         </div>
-      </div>
-
-      {/* Product Modal */}
-      <ImageModal
-        isOpen={!!selectedProduct}
-        onClose={() => setSelectedProduct(null)}
-        product={selectedProduct}
-        quantities={quantities}
-        handleQuantityChange={handleQuantityChange}
-        handleAddToCart={handleAddToCart}
-      />
+      )}
     </div>
   );
 };
