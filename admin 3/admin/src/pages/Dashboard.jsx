@@ -4,7 +4,7 @@ import { toast } from 'react-hot-toast';
 import api from '../services/api';
 import UserManagement from '../components/admin/UserManagement';
 
-import toast from 'react-hot-toast'; 
+
 import {
   Chart as ChartJS,
   CategoryScale,
