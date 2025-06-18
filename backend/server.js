@@ -11,7 +11,7 @@ const app = express();
 // ✅ CORS configuration
 const corsOptions = {
   origin: [
-    'http://localhost:3000',
+    'https://vin2growadmin.onrender.com',
   
     'https://vin2grow-frontend-x3tw.onrender.com'  // Your Render frontend URL
   ],
