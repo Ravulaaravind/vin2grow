@@ -12,8 +12,7 @@ const app = express();
 const corsOptions = {
   origin: [
     'https://vin2growadmin.onrender.com',
-  
-    'https://vin2grow-frontend-x3tw.onrender.com'  // Your Render frontend URL
+    'https://vin2grow-frontend-x3tw.onrender.com'
   ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
@@ -48,7 +47,7 @@ const paymentRoutes = require('./routes/payment');
 const dashboardRoutes = require('./routes/dashboard');
 const testRoutes = require('./routes/test');
 
-// ✅ Route middleware
+// ✅ Use route middleware
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/products', productRoutes);
@@ -58,35 +57,39 @@ app.use('/api/payment', paymentRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/test', testRoutes);
 
-// ✅ Health check and root routes
+// ✅ Health check route
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok' });
 });
 
+// ✅ Root route
 app.get('/', (req, res) => {
-  res.send('Vin2Grow backend is live 🚀');
+  res.send('🚀 Vin2Grow backend is live!');
 });
 
-// ✅ Error handler
+// ✅ Error handling middleware
 app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).json({ error: 'Something went wrong!' });
 });
 
-// ✅ 404 handler
+// ✅ 404 handler (must be last)
 app.use((req, res) => {
   res.status(404).json({ error: 'Route not found' });
 });
 
-// ✅ Connect to MongoDB and start server
-mongoose.connect(process.env.MONGODB_URI, { useNewUrlParser: true, useUnifiedTopology: true })
-  .then(() => {
-    console.log('✅ Connected to MongoDB');
-    const PORT = process.env.PORT || 10000;
-    app.listen(PORT, () => {
-      console.log(`🚀 Server is running on port ${PORT}`);
-    });
-  })
-  .catch((error) => {
-    console.error('❌ MongoDB connection error:', error);
+// ✅ Connect to MongoDB and start the server
+mongoose.connect(process.env.MONGODB_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true
+})
+.then(() => {
+  console.log('✅ Connected to MongoDB');
+  const PORT = process.env.PORT || 10000;
+  app.listen(PORT, () => {
+    console.log(`🚀 Server is running on port ${PORT}`);
   });
+})
+.catch((error) => {
+  console.error('❌ MongoDB connection error:', error);
+});
