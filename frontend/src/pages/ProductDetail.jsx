@@ -5,7 +5,7 @@ import { useCart } from '../context/CartContext';
 import { toast } from 'react-hot-toast';
 import { products as productsApi } from '../services/api';
 
-const BACKEND_URL = 'https://vin2growbackend.onrender.com/';
+const BACKEND_URL = 'https://vin2grow1.onrender.com/';
 const getImageUrl = (img) => {
   if (!img) return '/placeholder.svg';
   if (img.startsWith('http')) return img;
