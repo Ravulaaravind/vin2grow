@@ -1,4 +1,10 @@
-import { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useAuth } from '../context/AuthContext';
+import { toast } from 'react-hot-toast';
+import api from '../services/api';
+import UserManagement from '../components/admin/UserManagement';
+
+import toast from 'react-hot-toast'; 
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -11,11 +17,9 @@ import {
   Legend,
   ArcElement,
 } from 'chart.js';
-import { Line, Pie, Bar } from 'react-chartjs-2';
-import { toast } from 'react-hot-toast';
-import adminApi from '../services/api';
-import BottomNav from '../components/BottomNav';
+import { Line, Bar, Pie } from 'react-chartjs-2';
 
+// Register ChartJS components
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -28,402 +32,406 @@ ChartJS.register(
   ArcElement
 );
 
+const getStatusColor = (status) => {
+  switch (status?.toLowerCase()) {
+    case 'confirmed':
+      return 'bg-blue-100 text-blue-800';
+    case 'cancelled':
+      return 'bg-red-100 text-red-800';
+    case 'delivered':
+      return 'bg-green-100 text-green-800';
+    case 'pending':
+      return 'bg-yellow-100 text-yellow-800';
+    default:
+      return 'bg-gray-100 text-gray-800';
+  }
+};
+
 const Dashboard = () => {
-  const toastShownRef = useRef(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const { user } = useAuth();
+  const [activeTab, setActiveTab] = useState('overview');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [stats, setStats] = useState({
-    totalOrders: 0,
-    totalRevenue: 0,
-    totalProducts: 0,
-    totalCustomers: 0,
-    pendingOrders: 0,
-    completedOrders: 0,
-    revenueChange: 0,
-    lastMonthRevenue: 0,
-    averageOrderValue: 0,
+    userStats: {
+      totalUsers: 0,
+      activeUsers: 0,
+      newUsers: 0,
+      userOrders: []
+    },
+    orderStats: {
+      totalOrders: 0,
+      totalRevenue: 0,
+      pendingOrders: 0,
+      deliveredOrders: 0
+    },
+    productStats: {
+      totalProducts: 0,
+      totalStock: 0,
+      lowStockProducts: 0
+    },
+    dailyStats: [],
+    recentOrders: [],
+    topProducts: []
   });
 
-  const [recentOrders, setRecentOrders] = useState([]);
-  const [orderStatusData, setOrderStatusData] = useState({
-    labels: ['Delivered', 'Processing', 'Pending', 'Cancelled'],
-    datasets: [{
-      data: [0, 0, 0, 0],
-      backgroundColor: [
-        'rgba(34, 197, 94, 0.8)',
-        'rgba(59, 130, 246, 0.8)',
-        'rgba(234, 179, 8, 0.8)',
-        'rgba(239, 68, 68, 0.8)',
-      ],
-      borderColor: [
-        'rgba(34, 197, 94, 1)',
-        'rgba(59, 130, 246, 1)',
-        'rgba(234, 179, 8, 1)',
-        'rgba(239, 68, 68, 1)',
-      ],
-      borderWidth: 1,
-    }],
-  });
-
-  const [revenueData, setRevenueData] = useState({
-    labels: [],
-    datasets: [{
-      label: 'Revenue',
-      data: [],
-      borderColor: 'rgb(22, 163, 74)',
-      backgroundColor: 'rgba(22, 163, 74, 0.5)',
-      tension: 0.4,
-    }],
-  });
-
-  const [topProducts, setTopProducts] = useState([]);
-
-  useEffect(() => {
-    const loadData = async () => {
-      try {
-        setIsLoading(true);
-        await fetchDashboardData();
-      } catch (error) {
-        console.error('Failed to load dashboard data:', error);
-        if (!toastShownRef.current) {
-          toast.error('Failed to load dashboard data');
-          toastShownRef.current = true;
-        }
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadData();
-    const interval = setInterval(loadData, 30000);
-
-    return () => {
-      clearInterval(interval);
-      toastShownRef.current = false;
-    };
-  }, []);
-
-  const fetchDashboardData = async () => {
+  const fetchDashboardData = useCallback(async () => {
     try {
-      const [ordersResponse, productsResponse, customersResponse] = await Promise.all([
-        adminApi.orders.getAll(),
-        adminApi.products.getAll(),
-        adminApi.users.getAll(),
-      ]);
+      setLoading(true);
+      setError(null);
+      const response = await api.get('/api/dashboard/stats');
+      
+      if (!response.data) {
+        throw new Error('No data received from server');
+      }
 
-      const orders = ordersResponse.data;
-      const products = productsResponse.data;
-      const customers = customersResponse.data.filter(user => user.role === 'user');
+      // Ensure all data is properly initialized with default values
+      const safeData = {
+        userStats: {
+          totalUsers: response.data?.userStats?.totalUsers || 0,
+          activeUsers: response.data?.userStats?.activeUsers || 0,
+          newUsers: response.data?.userStats?.newUsers || 0,
+          userOrders: (response.data?.userStats?.userOrders || [])
+            .filter(order => order && order.userId)
+            .map(order => ({
+              userId: order.userId || 'unknown',
+              name: order.name || 'Unknown User',
+              email: order.email || 'No email',
+              orderCount: order.orderCount || 0,
+              totalSpent: order.totalSpent || 0
+            }))
+        },
+        orderStats: {
+          totalOrders: response.data?.orderStats?.totalOrders || 0,
+          totalRevenue: response.data?.orderStats?.totalRevenue || 0,
+          pendingOrders: response.data?.orderStats?.pendingOrders || 0,
+          deliveredOrders: response.data?.orderStats?.deliveredOrders || 0
+        },
+        productStats: {
+          totalProducts: response.data?.productStats?.totalProducts || 0,
+          totalStock: response.data?.productStats?.totalStock || 0,
+          lowStockProducts: response.data?.productStats?.lowStockProducts || 0
+        },
+        dailyStats: (response.data?.dailyStats || [])
+          .filter(stat => stat && stat.date)
+          .map(stat => ({
+            date: stat.date,
+            orders: stat.orders || 0,
+            revenue: stat.revenue || 0
+          })),
+        recentOrders: (response.data?.recentOrders || [])
+          .filter(order => order && order._id)
+          .map(order => ({
+            _id: order._id,
+            totalAmount: order.totalAmount || 0,
+            status: order.status || 'pending',
+            user: {
+              name: order.user?.name || 'Unknown User',
+              email: order.user?.email || 'No email'
+            }
+          })),
+        topProducts: (response.data?.topProducts || [])
+          .filter(product => product && product._id)
+          .map(product => ({
+            _id: product._id,
+            name: product.name || 'Unknown Product',
+            totalSold: product.totalSold || 0,
+            totalRevenue: product.totalRevenue || 0
+          }))
+      };
 
-      const currentDate = new Date();
-      const currentMonth = currentDate.getMonth();
-      const currentYear = currentDate.getFullYear();
-
-      const currentMonthOrders = orders.filter(order => {
-        const orderDate = new Date(order.createdAt);
-        return orderDate.getMonth() === currentMonth && orderDate.getFullYear() === currentYear;
-      });
-
-      const lastMonthOrders = orders.filter(order => {
-        const orderDate = new Date(order.createdAt);
-        const lastMonth = currentMonth === 0 ? 11 : currentMonth - 1;
-        const lastMonthYear = currentMonth === 0 ? currentYear - 1 : currentYear;
-        return orderDate.getMonth() === lastMonth && orderDate.getFullYear() === lastMonthYear;
-      });
-
-      const currentMonthRevenue = currentMonthOrders.reduce((sum, order) => sum + order.totalAmount, 0);
-      const lastMonthRevenue = lastMonthOrders.reduce((sum, order) => sum + order.totalAmount, 0);
-      const revenueChange = lastMonthRevenue ? ((currentMonthRevenue - lastMonthRevenue) / lastMonthRevenue) * 100 : 0;
-
-      const averageOrderValue = orders.length ? orders.reduce((sum, order) => sum + order.totalAmount, 0) / orders.length : 0;
-
-      const totalOrders = orders.length;
-      const totalRevenue = orders.reduce((sum, order) => sum + order.totalAmount, 0);
-      const totalProducts = products.length;
-      const totalCustomers = customers.length;
-      const pendingOrders = orders.filter(order => order.status === 'pending').length;
-      const completedOrders = orders.filter(order => order.status === 'delivered').length;
-
-      setStats({
-        totalOrders,
-        totalRevenue,
-        totalProducts,
-        totalCustomers,
-        pendingOrders,
-        completedOrders,
-        revenueChange,
-        lastMonthRevenue,
-        averageOrderValue,
-      });
-
-      const recentOrders = orders
-        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-        .slice(0, 5)
-        .map(order => ({
-          id: order._id,
-          customer: order.user?.name || 'N/A',
-          amount: order.totalAmount,
-          status: order.status,
-          date: new Date(order.createdAt).toLocaleDateString(),
-        }));
-
-      setRecentOrders(recentOrders);
-
-      const statusCounts = orders.reduce((acc, order) => {
-        acc[order.status] = (acc[order.status] || 0) + 1;
-        return acc;
-      }, {});
-
-      setOrderStatusData(prev => ({
-        ...prev,
-        datasets: [{
-          ...prev.datasets[0],
-          data: [
-            statusCounts.delivered || 0,
-            statusCounts.processing || 0,
-            statusCounts.pending || 0,
-            statusCounts.cancelled || 0,
-          ],
-        }],
-      }));
-
-      const monthlyRevenue = orders.reduce((acc, order) => {
-        const month = new Date(order.createdAt).toLocaleString('default', { month: 'short' });
-        acc[month] = (acc[month] || 0) + order.totalAmount;
-        return acc;
-      }, {});
-
-      const months = Object.keys(monthlyRevenue);
-      const revenue = Object.values(monthlyRevenue);
-
-      setRevenueData(prev => ({
-        ...prev,
-        labels: months,
-        datasets: [{
-          ...prev.datasets[0],
-          data: revenue,
-        }],
-      }));
-
-      const productSales = orders.reduce((acc, order) => {
-        order.items.forEach(item => {
-          acc[item.product._id] = (acc[item.product._id] || 0) + item.quantity;
-        });
-        return acc;
-      }, {});
-
-      const topProducts = Object.entries(productSales)
-        .sort(([, a], [, b]) => b - a)
-        .slice(0, 5)
-        .map(([productId, quantity]) => {
-          const product = products.find(p => p._id === productId);
-          return {
-            id: productId,
-            name: product?.name || 'Unknown Product',
-            quantity,
-            revenue: product?.price * quantity || 0,
-          };
-        });
-
-      setTopProducts(topProducts);
+      setStats(safeData);
     } catch (error) {
       console.error('Failed to load dashboard data:', error);
-    }
-  };
-
-  const handleRefresh = async () => {
-    try {
-      setIsLoading(true);
-      await fetchDashboardData();
-      toast.success('Dashboard data refreshed successfully!');
-    } catch (error) {
-      toast.error('Failed to refresh dashboard data');
+      setError(error.message || 'Failed to load dashboard data');
+      toast.error(error.message || 'Failed to load dashboard data');
+      // Set default values when there's an error
+      setStats({
+        userStats: {
+          totalUsers: 0,
+          activeUsers: 0,
+          newUsers: 0,
+          userOrders: []
+        },
+        orderStats: {
+          totalOrders: 0,
+          totalRevenue: 0,
+          pendingOrders: 0,
+          deliveredOrders: 0
+        },
+        productStats: {
+          totalProducts: 0,
+          totalStock: 0,
+          lowStockProducts: 0
+        },
+        dailyStats: [],
+        recentOrders: [],
+        topProducts: []
+      });
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
+  }, []);
+
+  const handleRefresh = useCallback(async () => {
+    try {
+      await fetchDashboardData();
+      toast.success('Dashboard data refreshed successfully');
+    } catch (error) {
+      console.error('Failed to refresh dashboard data:', error);
+      toast.error('Failed to refresh dashboard data');
+    }
+  }, [fetchDashboardData]);
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, [fetchDashboardData]);
+
+  // Chart data for orders over time
+  const ordersChartData = {
+    labels: stats.dailyStats.map(stat => stat.date),
+    datasets: [
+      {
+        label: 'Orders',
+        data: stats.dailyStats.map(stat => stat.orders),
+        borderColor: 'rgb(75, 192, 192)',
+        tension: 0.1,
+      },
+    ],
   };
 
-  if (isLoading) {
+  // Chart data for revenue
+  const revenueChartData = {
+    labels: stats.dailyStats.map(stat => stat.date),
+    datasets: [
+      {
+        label: 'Revenue (₹)',
+        data: stats.dailyStats.map(stat => stat.revenue),
+        backgroundColor: 'rgba(53, 162, 235, 0.5)',
+      },
+    ],
+  };
+
+  // Chart data for order status distribution
+  const orderStatusData = {
+    labels: ['Pending', 'Delivered'],
+    datasets: [
+      {
+        data: [stats.orderStats.pendingOrders, stats.orderStats.deliveredOrders],
+        backgroundColor: [
+          'rgba(255, 206, 86, 0.5)',
+          'rgba(75, 192, 192, 0.5)',
+        ],
+      },
+    ],
+  };
+
+  if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen bg-gray-900">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-green-500"></div>
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-600"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen">
+        <div className="text-red-600 mb-4">{error}</div>
+        <button
+          onClick={handleRefresh}
+          className="bg-primary-600 text-white px-4 py-2 rounded-md hover:bg-primary-700 transition-colors duration-200"
+        >
+          Retry
+        </button>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-900 px-10 md:px-6 overflow-x-hidden">
-      <div className="max-w-7xl mx-auto">
-        <div className="flex flex-col md:flex-row justify-between items-center mb-0 md:mb-6">
-          <h1 className="text-2xl md:text-3xl font-bold text-white">Dashboard Overview</h1>
-          <button
-            onClick={handleRefresh}
-            className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors duration-200 w-full md:w-auto flex items-center"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-5 w-5 mr-2"
-              viewBox="0 0 20 20"
-              fill="currentColor"
-            >
-              <path
-                fillRule="evenodd"
-                d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z"
-                clipRule="evenodd"
-              />
-            </svg>
-            Refresh Data
-          </button>
-        </div>
-        
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 mb-6 md:mb-8">
-          <div className="bg-gray-800 p-4 md:p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200 border border-green-600">
-            <h3 className="text-gray-300 text-sm font-medium">Total Orders</h3>
-            <p className="text-2xl md:text-3xl font-bold text-white">{stats.totalOrders}</p>
-            <p className="text-xs md:text-sm text-green-400 mt-1 md:mt-2">
-              {stats.completedOrders} completed
-            </p>
-          </div>
-          <div className="bg-gray-800 p-4 md:p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200 border border-green-600">
-            <h3 className="text-gray-300 text-sm font-medium">Total Revenue</h3>
-            <p className="text-2xl md:text-3xl font-bold text-white">₹{stats.totalRevenue.toLocaleString()}</p>
-            <div className="flex items-center mt-1 md:mt-2">
-              <span className={`text-xs md:text-sm ${
-                stats.revenueChange >= 0 ? 'text-green-400' : 'text-red-400'
-              }`}>
-                {Math.abs(stats.revenueChange).toFixed(1)}%
-              </span>
-              <span className="text-xs md:text-sm text-gray-400 ml-2">
-                vs last month
-              </span>
-            </div>
-          </div>
-          <div className="bg-gray-800 p-4 md:p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200 border border-green-600">
-            <h3 className="text-gray-300 text-sm font-medium">Total Products</h3>
-            <p className="text-2xl md:text-3xl font-bold text-white">{stats.totalProducts}</p>
-          </div>
-          <div className="bg-gray-800 p-4 md:p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200 border border-green-600">
-            <h3 className="text-gray-300 text-sm font-medium">Total Customers</h3>
-            <p className="text-2xl md:text-3xl font-bold text-white">{stats.totalCustomers}</p>
-          </div>
-        </div>
-
-        {/* Charts Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6 mb-6 md:mb-8">
-          <div className="bg-gray-800 p-4 md:p-6 rounded-lg shadow-md min-w-0 border border-green-600">
-            <h2 className="text-lg md:text-xl font-semibold mb-4 text-white">Revenue Trend</h2>
-            <div className="h-64 md:h-80">
-              <Line
-                data={revenueData}
-                options={{
-                  responsive: true,
-                  maintainAspectRatio: false,
-                  plugins: {
-                    legend: {
-                      labels: {
-                        color: '#fff',
-                      },
-                    },
-                  },
-                  scales: {
-                    y: {
-                      beginAtZero: true,
-                      grid: {
-                        color: 'rgba(255, 255, 255, 0.1)',
-                      },
-                      ticks: {
-                        color: '#fff',
-                      },
-                    },
-                    x: {
-                      grid: {
-                        color: 'rgba(255, 255, 255, 0.1)',
-                      },
-                      ticks: {
-                        color: '#fff',
-                      },
-                    },
-                  },
-                }}
-              />
-            </div>
-          </div>
-          <div className="bg-gray-800 p-4 md:p-6 rounded-lg shadow-md min-w-0 border border-green-600">
-            <h2 className="text-lg md:text-xl font-semibold mb-4 text-white">Order Status Distribution</h2>
-            <div className="h-64 md:h-80">
-              <Pie
-                data={orderStatusData}
-                options={{
-                  responsive: true,
-                  maintainAspectRatio: false,
-                  plugins: {
-                    legend: {
-                      position: 'right',
-                      labels: {
-                        color: '#fff',
-                      },
-                    },
-                  },
-                }}
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Recent Orders */}
-        <div className="bg-gray-800 p-4 md:p-6 rounded-lg shadow-md border border-green-600">
-          <h2 className="text-lg md:text-xl font-semibold mb-4 text-white">Recent Orders</h2>
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-700">
-              <thead className="bg-gray-700">
-                <tr>
-                  <th className="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
-                    Order ID
-                  </th>
-                  <th className="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
-                    Customer
-                  </th>
-                  <th className="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
-                    Amount
-                  </th>
-                  <th className="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
-                    Status
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-gray-800 divide-y divide-gray-700">
-                {recentOrders.map((order) => (
-                  <tr key={order.id} className="hover:bg-gray-700">
-                    <td className="px-4 md:px-6 py-4 whitespace-nowrap text-sm text-white">
-                      #{order.id.slice(-6)}
-                    </td>
-                    <td className="px-4 md:px-6 py-4 whitespace-nowrap text-sm text-white">
-                      {order.customer}
-                    </td>
-                    <td className="px-4 md:px-6 py-4 whitespace-nowrap text-sm text-white">
-                      ₹{order.amount.toLocaleString()}
-                    </td>
-                    <td className="px-4 md:px-6 py-4 whitespace-nowrap text-sm">
-                      <span className={`px-2 py-1 rounded-full text-xs ${
-                        order.status === 'delivered' ? 'bg-green-900 text-green-300' :
-                        order.status === 'processing' ? 'bg-blue-900 text-blue-300' :
-                        order.status === 'pending' ? 'bg-yellow-900 text-yellow-300' :
-                        'bg-red-900 text-red-300'
-                      }`}>
-                        {order.status}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <BottomNav />
+    <div className="container mx-auto px-4 py-8">
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-3xl font-bold">Dashboard</h1>
+        <button
+          onClick={handleRefresh}
+          className="bg-primary-600 text-white px-4 py-2 rounded-md hover:bg-primary-700 transition-colors duration-200"
+        >
+          Refresh Data
+        </button>
       </div>
+
+      {/* Tabs */}
+      <div className="mb-8">
+        <div className="border-b border-gray-200">
+          <nav className="-mb-px flex space-x-8">
+            <button
+              onClick={() => setActiveTab('overview')}
+              className={`${
+                activeTab === 'overview'
+                  ? 'border-primary-500 text-primary-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+            >
+              Overview
+            </button>
+            <button
+              onClick={() => setActiveTab('users')}
+              className={`${
+                activeTab === 'users'
+                  ? 'border-primary-500 text-primary-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+            >
+              User Management
+            </button>
+          </nav>
+        </div>
+      </div>
+
+      {activeTab === 'overview' ? (
+        <>
+          {/* Stats Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div className="bg-white rounded-lg shadow p-6">
+              <h3 className="text-gray-500 text-sm font-medium">Total Users</h3>
+              <p className="text-3xl font-bold">{stats.userStats.totalUsers}</p>
+              <p className="text-sm text-gray-500 mt-2">
+                {stats.userStats.newUsers} new this month
+              </p>
+            </div>
+            <div className="bg-white rounded-lg shadow p-6">
+              <h3 className="text-gray-500 text-sm font-medium">Total Orders</h3>
+              <p className="text-3xl font-bold">{stats.orderStats.totalOrders}</p>
+              <p className="text-sm text-gray-500 mt-2">
+                {stats.orderStats.pendingOrders} pending
+              </p>
+            </div>
+            <div className="bg-white rounded-lg shadow p-6">
+              <h3 className="text-gray-500 text-sm font-medium">Total Revenue</h3>
+              <p className="text-3xl font-bold">₹{stats.orderStats.totalRevenue.toLocaleString()}</p>
+              <p className="text-sm text-gray-500 mt-2">
+                {stats.orderStats.deliveredOrders} delivered
+              </p>
+            </div>
+            <div className="bg-white rounded-lg shadow p-6">
+              <h3 className="text-gray-500 text-sm font-medium">Products</h3>
+              <p className="text-3xl font-bold">{stats.productStats.totalProducts}</p>
+              <p className="text-sm text-gray-500 mt-2">
+                {stats.productStats.lowStockProducts} low in stock
+              </p>
+            </div>
+          </div>
+
+          {/* User Orders Table */}
+          <div className="bg-white rounded-lg shadow p-6 mb-8">
+            <h3 className="text-lg font-medium mb-4">User Order Statistics</h3>
+            <div className="overflow-x-auto">
+              <table className="min-w-full">
+                <thead>
+                  <tr>
+                    <th className="px-4 py-2 text-left">User</th>
+                    <th className="px-4 py-2 text-left">Email</th>
+                    <th className="px-4 py-2 text-left">Total Orders</th>
+                    <th className="px-4 py-2 text-left">Total Spent</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {stats.userStats.userOrders.map((userOrder) => (
+                    <tr key={userOrder.userId}>
+                      <td className="px-4 py-2">{userOrder.name}</td>
+                      <td className="px-4 py-2">{userOrder.email}</td>
+                      <td className="px-4 py-2">{userOrder.orderCount}</td>
+                      <td className="px-4 py-2">₹{userOrder.totalSpent.toLocaleString()}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Charts */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+            <div className="bg-white rounded-lg shadow p-6">
+              <h3 className="text-lg font-medium mb-4">Orders Over Time</h3>
+              <Line data={ordersChartData} />
+            </div>
+            <div className="bg-white rounded-lg shadow p-6">
+              <h3 className="text-lg font-medium mb-4">Revenue</h3>
+              <Bar data={revenueChartData} />
+            </div>
+          </div>
+
+          {/* Order Status and Recent Orders */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+            <div className="bg-white rounded-lg shadow p-6">
+              <h3 className="text-lg font-medium mb-4">Order Status Distribution</h3>
+              <div className="h-64">
+                <Pie data={orderStatusData} />
+              </div>
+            </div>
+
+            {/* Recent Orders */}
+            <div className="bg-white rounded-lg shadow p-6">
+              <h3 className="text-lg font-medium mb-4">Recent Orders</h3>
+              <div className="overflow-x-auto">
+                <table className="min-w-full">
+                  <thead>
+                    <tr>
+                      <th className="px-4 py-2 text-left">Order ID</th>
+                      <th className="px-4 py-2 text-left">Customer</th>
+                      <th className="px-4 py-2 text-left">Amount</th>
+                      <th className="px-4 py-2 text-left">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {stats.recentOrders.map((order) => (
+                      <tr key={order._id}>
+                        <td className="px-4 py-2">{order._id}</td>
+                        <td className="px-4 py-2">{order.user?.name || 'Unknown User'}</td>
+                        <td className="px-4 py-2">₹{order.totalAmount}</td>
+                        <td className="px-4 py-2">
+                          <span className={`px-2 py-1 rounded-full text-xs ${getStatusColor(order.status)}`}>
+                            {order.status}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          {/* Top Products */}
+          <div className="bg-white rounded-lg shadow p-6 mb-8">
+            <h3 className="text-lg font-medium mb-4">Top Selling Products</h3>
+            <div className="overflow-x-auto">
+              <table className="min-w-full">
+                <thead>
+                  <tr>
+                    <th className="px-4 py-2 text-left">Product</th>
+                    <th className="px-4 py-2 text-left">Units Sold</th>
+                    <th className="px-4 py-2 text-left">Revenue</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {stats.topProducts.map((product) => (
+                    <tr key={product._id}>
+                      <td className="px-4 py-2">{product.name}</td>
+                      <td className="px-4 py-2">{product.totalSold}</td>
+                      <td className="px-4 py-2">₹{product.totalRevenue.toLocaleString()}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </>
+      ) : (
+        <UserManagement />
+      )}
     </div>
   );
 };
 
-export default Dashboard;
+export default Dashboard; 
