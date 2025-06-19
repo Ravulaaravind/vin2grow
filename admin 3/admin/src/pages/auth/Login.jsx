@@ -68,7 +68,7 @@ const Login = () => {
               <div className="relative">
                 <div className="absolute -inset-2 bg-green-500 rounded-full blur-md opacity-75"></div>
                 <img
-                  src="/images/logo1.png"
+                  src="/images/white4.png.png"
                   alt="logo"
                   className="relative w-20 h-20 object-contain bg-white p-3 rounded-full shadow-lg border-2 border-green-500"
                 />
