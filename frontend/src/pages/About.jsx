@@ -33,9 +33,11 @@ const About = () => {
                 <div>
                   <h2 className="text-2xl font-semibold text-white mb-6">Our Story</h2>
                   <p className="text-gray-300 leading-relaxed mb-4">
-                    Founded by Aravind with a passion for timeless craftsmanship, Vin2Grow was created to bring the warmth 
-                    and elegance of wooden products into every home. What started as a small dream has now grown into a 
-                    trusted name for quality, creativity, and natural design.
+                    This handcrafted miniature wooden house showcases the timeless beauty of traditional Indian architecture.
+                    Built entirely from natural wood materials, it reflects intricate detailing — from the layered shingle roof to the ornate pillars and doors adorned with colorful tribal patterns.
+                    The design evokes a sense of cultural heritage and craftsmanship, celebrating the rich artistry of rural India. 
+                    Such pieces not only serve as decorative art but also carry the soul of generations of skilled artisans, making them both nostalgic and unique. 
+                    It's a perfect symbol of Vin2Grow’s vision — blending tradition with creative expression through sustainable wooden creations.
                   </p>
                   <p className="text-gray-300 leading-relaxed">
                     At the heart of our vision is a blend of tradition and modern utility. Every piece crafted tells a story 
