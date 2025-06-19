@@ -10,9 +10,9 @@ const Footer = () => {
           <div className="flex flex-col items-center space-y-2 md:space-y-4 w-full md:w-1/5">
             <Link to="/" className="flex items-center">
               <img 
-                src="/images/Logos/logo1.png" 
+                src="/images/Logos/white4.png" 
                 alt="MAR_logo" 
-                className="w-24 md:w-40 h-20 md:h-35 transition-transform duration-300 hover:scale-105" 
+                className="h-16 md:h-24 w-auto transition-transform duration-250 hover:scale-105"
               />
             </Link>
             <h3 className="text-2xl md:text-4xl font-bold text-green-400">Vin2Grow</h3>
