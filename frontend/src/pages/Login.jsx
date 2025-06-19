@@ -118,7 +118,7 @@ const Login = memo(() => {
           >
             <img
               className="mx-auto h-24 w-24 rounded-full border-4 border-green-500 p-2 bg-gray-900"
-              src="/images/Logos/logo1.png" 
+              src="/images/Logos/white4.png.png" 
               alt="Vin2Grow Logo"
             />
           </motion.div>
