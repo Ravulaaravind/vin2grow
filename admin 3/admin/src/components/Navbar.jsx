@@ -45,10 +45,9 @@ const Navbar = () => {
         <div className="flex justify-between h-16 items-center">
           <div className="flex items-center space-x-4">
             <Link to="/" className="flex items-center space-x-3">
-              <img 
-                src="https://res.cloudinary.com/dnbqgzh4t/image/upload/v1749827773/cglbdlwmshcn3j4mv1v0.png" 
+              src="/images/white4.png.png"
                 alt="logo" 
-                className="w-10 h-auto rounded-full border-2 border-green-500"
+                className="w-10 md:w-16 h-auto rounded-full border- border-green-500"
               />
               <span className="text-xl font-extrabold text-green-400">
                 Vin2Grow Admin
