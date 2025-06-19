@@ -10,8 +10,8 @@ const Contact = () => {
         </svg>
       ),
       title: 'Phone',
-      content: '+91 9701555435',
-      link: 'tel:+919701555435'
+      content: '+91 7207711919',
+      link: 'tel:+917207711919'
     },
     {
       icon: (
@@ -20,8 +20,8 @@ const Contact = () => {
         </svg>
       ),
       title: 'Email',
-      content: 'maanmanuchulur@gmail.com',
-      link: 'mailto:maanmanuchulur@gmail.com'
+      content: 'vintogrow2@gmail.com',
+      link: 'mailto:vintogrow2@gmail.com'
     },
     {
       icon: (
@@ -31,7 +31,7 @@ const Contact = () => {
         </svg>
       ),
       title: 'Address',
-      content: '4-7-62/2, Shivaji nagar, Attapur, Hyderabad-500048',
+      content: '5-4-/3',
       link: 'https://maps.app.goo.gl/BV9XeQPSCLEXyyky7'
     },
     {
@@ -42,7 +42,7 @@ const Contact = () => {
       ),
       title: 'WhatsApp',
       content: 'Chat with us on WhatsApp',
-      link: 'https://wa.me/919701555435'
+      link: 'https://wa.me/7207711919'
     }
   ];
 
