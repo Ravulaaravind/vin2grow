@@ -57,7 +57,7 @@ const Contact = () => {
             transition={{ duration: 0.6 }}
             className="text-center mb-12"
           >
-            <h1 className="text-4xl font-bold text-emerald-400 mb-4">Contact Us</h1>
+            <h1 className="text-4xl font-bold mb-4">Contact Us</h1>
             <div className="w-20 h-1 bg-emerald-400 mx-auto rounded-full mb-4"></div>
             <p className="text-gray-300 max-w-2xl mx-auto">
               Have questions about our handcrafted wooden treasures? We're here to help!
