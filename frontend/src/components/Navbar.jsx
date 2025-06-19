@@ -79,7 +79,7 @@ const Navbar = () => {
             <div className="flex items-center">
               <Link to="/" className="flex items-center">
                 <img 
-                  src="/images/Logos/white4.png" 
+                  src="/images/Logos/white4.png.png" 
                   alt="pickles Logo" 
                   className="h-14 w-auto transition-transform duration-300 hover:scale-105"
                 />
